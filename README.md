@@ -279,6 +279,21 @@ PK 側で確認していること:
 - 濃度帯が隙間なく連続し、境界がすべて公表アンカー値に一致すること
 - 全帯が PMID を持つこと、曲線が単調で値域を外れないこと
 
+個体化推定で確認していることは「個体化 MEAC 推定」の節に記載しています（回復テストを含む 29 項目）。
+
+---
+
+## 使い方
+
+`index.html` をブラウザで開くだけで動作します。ビルド手順はありません。
+
+```
+npm test     # 99 項目の検証を実行
+npm run serve  # http://localhost:8777 でローカル配信
+```
+
+`file://` で直接開いても動きますが、Chart.js を CDN から読むためオフラインではグラフが出ません。
+
 ---
 
 ## ファイル構成
@@ -310,3 +325,7 @@ validation/validate-individualisation.js  個体化推定の Evaluator（回復�
 鎮痛指標は文献の母集団統計に基づく参考値で、個々の患者の鎮痛充足度を示すものではありません。
 
 YASUYUKI SUZUKI — Saiseikai Matsuyama Hospital / Ehime University Graduate School of Medicine
+
+## ライセンス
+
+MIT License（医療ソフトウェアに関する免責条項を含む）。[LICENSE](LICENSE) を参照してください。
