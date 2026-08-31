@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# macOS
+.DS_Store
+
+# Editor / tooling
+.claude/
+*.swp
+*~
+
+# Local scratch
+scratchpad/
+tmp/

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Fentanyl Ce Simulator V1.0.0</title>
+
+    <meta name="theme-color" content="#010409">
+    <meta name="apple-mobile-web-app-title" content="Fentanyl Ce">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23010409%22/%3E%3Cpath d=%22M4 24 C10 24 10 9 16 9 C22 9 22 20 28 20%22 fill=%22none%22 stroke=%22%232FBFA8%22 stroke-width=%223%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Fentanyl Ce Simulator</h2>
+            <p>Initializing...</p>
+        </div>
+    </div>
+
+    <!-- Disclaimer Modal -->
+    <div id="disclaimerModal" class="modal active">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ご確認ください</h2>
+            </div>
+            <div class="modal-body">
+                <div class="disclaimer-content">
+                    <ul>
+                        <li>本アプリケーションは<strong>教育・研究目的</strong>のシミュレータです</li>
+                        <li>臨床診断・治療の根拠として使用しないでください</li>
+                        <li>すべての臨床判断は資格を持つ医療者の責任のもとで行ってください</li>
+                        <li>表示される濃度は母集団モデルによる理論値であり、個々の患者の実測濃度ではありません</li>
+                        <li>鎮痛効果の表示は文献の母集団統計に基づく参考指標であり、個々の患者の鎮痛充足度を保証するものではありません</li>
+                    </ul>
+                    <p class="disclaimer-basis">
+                        PK/PD: Scott JC, Stanski DR. J Pharmacol Exp Ther 1987;240:159-66 (既定)<br>
+                        比較用 PK: Shafer SL et al. Anesthesiology 1990;73:1091-102 / Bae J et al. Br J Anaesth 2020;125:976-85<br>
+                        鎮痛指標: Bae 2020 / Gourlay 1988 / McEwan 1993 / Glass 1993 / Mildh 2001
+                    </p>
+                    <p class="disclaimer-dev">YASUYUKI SUZUKI &mdash; Saiseikai Matsuyama Hospital / Ehime University Graduate School of Medicine</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="acceptDisclaimer" class="btn btn-primary btn-block">
+                    同意して開始
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app hidden">
+
+        <header class="app-header">
+            <div class="header-left">
+                <h1>Fentanyl Ce <span class="version">V1.0</span></h1>
+            </div>
+            <div class="header-right">
+                <button id="editPatientBtn" class="btn-icon" aria-label="患者設定">
+                    <span class="icon-person">&#9787;</span>
+                    <span id="headerPatientSummary" class="patient-summary">45歳 60kg</span>
+                </button>
+            </div>
+        </header>
+
+        <nav class="step-nav">
+            <button class="step-tab active" data-step="0">
+                <span class="step-num">1</span>
+                <span class="step-label">リアルタイム</span>
+            </button>
+            <span class="step-arrow">&#9654;</span>
+            <button class="step-tab" data-step="1">
+                <span class="step-num">2</span>
+                <span class="step-label">鎮痛評価</span>
+            </button>
+            <span class="step-arrow">&#9654;</span>
+            <button class="step-tab" data-step="2">
+                <span class="step-num">3</span>
+                <span class="step-label">投与記録</span>
+            </button>
+        </nav>
+
+        <div class="wizard-viewport">
+            <div class="wizard-track" id="wizardTrack">
+
+                <!-- ============================================ -->
+                <!-- STEP 1: Real-time Ce prediction               -->
+                <!-- ============================================ -->
+                <section class="wizard-step" data-step="0">
+                    <div class="step-content">
+                        <div class="step-title-bar">
+                            <h2>リアルタイム効果部位濃度予測</h2>
+                            <p class="step-subtitle">投与を開始すると Cp / Ce と鎮痛指標が実時間で更新されます</p>
+                        </div>
+
+                        <!-- Model selection -->
+                        <div class="control-card">
+                            <div class="card-title">PK モデル</div>
+                            <div class="model-toggle" id="modelToggle">
+                                <button type="button" data-model="scottStanski" class="active">Scott-Stanski</button>
+                                <button type="button" data-model="shafer">Shafer</button>
+                                <button type="button" data-model="bae">Bae</button>
+                                <button type="button" data-model="all">比較</button>
+                            </div>
+                            <p class="model-summary" id="modelSummary"></p>
+                            <details class="model-details">
+                                <summary>モデルの出典と限界</summary>
+                                <div class="model-note" id="modelNote"></div>
+                            </details>
+                        </div>
+
+                        <div id="shaferWeightWarning" class="warn-banner hidden"></div>
+
+                        <!-- Dose controls -->
+                        <div class="control-card">
+                            <div class="stepper-row-group">
+                                <div class="stepper-control">
+                                    <label for="rtBolus">ボーラス (µg)</label>
+                                    <div class="stepper-row">
+                                        <button type="button" class="stepper-btn stepper-minus" data-target="rtBolus" data-step="25" aria-label="減らす">&#8722;</button>
+                                        <input type="number" id="rtBolus" class="stepper-input" min="0" max="2000" step="25" value="100" inputmode="numeric">
+                                        <button type="button" class="stepper-btn stepper-plus" data-target="rtBolus" data-step="25" aria-label="増やす">&#43;</button>
+                                    </div>
+                                </div>
+                                <div class="stepper-control">
+                                    <label for="rtContinuous">持続 (µg/hr)</label>
+                                    <div class="stepper-row">
+                                        <button type="button" class="stepper-btn stepper-minus" data-target="rtContinuous" data-step="10" aria-label="減らす">&#8722;</button>
+                                        <input type="number" id="rtContinuous" class="stepper-input" min="0" max="1000" step="10" value="0" inputmode="numeric">
+                                        <button type="button" class="stepper-btn stepper-plus" data-target="rtContinuous" data-step="10" aria-label="増やす">&#43;</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="model-note">
+                                ボーラスは Start 時および「追加ボーラス」を押した時点で投与されます。持続量はいつでも変更でき、変更した時点から反映されます。
+                            </p>
+
+                            <div class="card-title" style="margin-top:12px">進行速度</div>
+                            <div class="model-toggle" id="speedToggle">
+                                <button type="button" data-speed="1" class="active">&times;1 実時間</button>
+                                <button type="button" data-speed="10">&times;10</button>
+                                <button type="button" data-speed="60">&times;60</button>
+                            </div>
+                            <p class="model-note">
+                                フェンタニルは Ce のピークまで約 3 分、投与中止後の減衰は数時間の単位です。&times;10 / &times;60 では時間経過を早送りします。
+                            </p>
+                        </div>
+
+                        <div class="action-bar">
+                            <button id="startRealtimeBtn" class="btn btn-primary btn-action">Start</button>
+                            <button id="stopRealtimeBtn" class="btn btn-danger btn-action hidden">Stop</button>
+                            <button id="addBolusBtn" class="btn btn-warning btn-action hidden">追加ボーラス</button>
+                            <button id="recordSnapshotBtn" class="btn btn-secondary btn-action hidden">記録</button>
+                        </div>
+
+                        <!-- Concentrations -->
+                        <div class="conc-grid" id="rtConcGrid"></div>
+
+                        <div class="elapsed-card">
+                            <span class="elapsed-label">経過時間</span>
+                            <span id="rtElapsed" class="elapsed-value">00:00</span>
+                        </div>
+
+                        <!-- Analgesia panel -->
+                        <div class="analgesia-card">
+                            <div class="analgesia-headline">
+                                <span class="analgesia-dot" id="rtBandDot"></span>
+                                <span class="analgesia-band-name" id="rtBandName">投与前</span>
+                                <span class="analgesia-band-range" id="rtBandRange"></span>
+                            </div>
+                            <p class="analgesia-desc" id="rtBandDesc">Start を押すとフェンタニルの効果部位濃度と鎮痛指標の予測が始まります。</p>
+
+                            <div class="analgesia-metrics" id="rtMetrics"></div>
+
+                            <div class="ce-scale">
+                                <div class="ce-scale-track" id="rtCeScaleTrack"></div>
+                                <div class="ce-scale-labels" id="rtCeScaleLabels"></div>
+                            </div>
+                        </div>
+
+                        <div class="model-toggle trace-toggle" id="traceToggle">
+                            <button type="button" data-trace="both" class="active">Ce + Cp</button>
+                            <button type="button" data-trace="ce">Ce のみ</button>
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="realtimeChart"></canvas>
+                        </div>
+
+                        <div id="snapshotsSection" class="snapshots-section hidden">
+                            <h3>記録</h3>
+                            <div id="snapshotsList"></div>
+                        </div>
+
+                        <div class="step-nav-bottom">
+                            <button class="btn btn-primary btn-block btn-next" data-goto="1">
+                                鎮痛評価へ &#9654;
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================ -->
+                <!-- STEP 2: Analgesia assessment                  -->
+                <!-- ============================================ -->
+                <section class="wizard-step" data-step="1">
+                    <div class="step-content">
+                        <div class="step-title-bar">
+                            <h2>鎮痛評価と目標 Ce 設計</h2>
+                            <p class="step-subtitle">任意の Ce における鎮痛指標と、その Ce を保つ投与量を確認します</p>
+                        </div>
+
+                        <div id="ceTransferBanner" class="info-banner hidden"></div>
+
+                        <div class="control-card">
+                            <div class="card-title">評価する効果部位濃度</div>
+                            <div class="stepper-control stepper-compact">
+                                <div class="stepper-row">
+                                    <button type="button" class="stepper-btn stepper-minus" data-target="evalCe" data-step="0.05" aria-label="減らす">&#8722;</button>
+                                    <input type="number" id="evalCe" class="stepper-input" min="0" max="20" step="0.05" value="1.00" inputmode="decimal" aria-label="評価する効果部位濃度 (ng/mL)">
+                                    <button type="button" class="stepper-btn stepper-plus" data-target="evalCe" data-step="0.05" aria-label="増やす">&#43;</button>
+                                </div>
+                            </div>
+                            <p class="model-note">単位: ng/mL</p>
+                        </div>
+
+                        <div class="analgesia-card">
+                            <div class="analgesia-headline">
+                                <span class="analgesia-dot" id="evalBandDot"></span>
+                                <span class="analgesia-band-name" id="evalBandName">&mdash;</span>
+                                <span class="analgesia-band-range" id="evalBandRange"></span>
+                            </div>
+                            <p class="analgesia-desc" id="evalBandDesc"></p>
+                            <div class="analgesia-metrics" id="evalMetrics"></div>
+                        </div>
+
+                        <div class="control-card">
+                            <div class="card-title">Ce &ndash; 鎮痛効果曲線</div>
+                            <div class="chart-container" style="margin-bottom:0">
+                                <canvas id="analgesiaCurveChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="control-card">
+                            <div class="card-title">この Ce を保つための投与量</div>
+                            <div class="results-grid results-grid-fit">
+                                <div class="result-card">
+                                    <span class="result-label">維持速度</span>
+                                    <span id="maintRate" class="result-value">&mdash;</span>
+                                    <span class="result-unit">µg/hr</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">負荷ボーラス</span>
+                                    <span id="loadingBolus" class="result-value">&mdash;</span>
+                                    <span class="result-unit">µg</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">効果発現</span>
+                                    <span id="tPeakValue" class="result-value">&mdash;</span>
+                                    <span class="result-unit">分</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">定常の 90% まで</span>
+                                    <span id="t90Value" class="result-value">&mdash;</span>
+                                    <span class="result-unit">時間</span>
+                                </div>
+                            </div>
+                            <p class="model-note" id="targetDesignNote"></p>
+                        </div>
+
+                        <details class="disclosure">
+                            <summary>濃度帯の参照表と出典</summary>
+                            <div>
+                                <table class="ref-table" id="bandRefTable"></table>
+                                <p class="fine-print" id="bandRefFootnote"></p>
+                            </div>
+                        </details>
+
+                        <div class="step-nav-bottom step-nav-dual">
+                            <button class="btn btn-secondary btn-back" data-goto="0">&#9664; リアルタイム</button>
+                            <button class="btn btn-primary btn-next" data-goto="2">投与記録へ &#9654;</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================ -->
+                <!-- STEP 3: Dose record simulation                -->
+                <!-- ============================================ -->
+                <section class="wizard-step" data-step="2">
+                    <div class="step-content">
+                        <div class="step-title-bar">
+                            <h2>投与記録シミュレーション</h2>
+                            <p class="step-subtitle">麻酔記録の投与イベントから Cp / Ce の全経過を再構成します</p>
+                        </div>
+
+                        <div class="control-card">
+                            <div class="dose-events-header">
+                                <h3>投与イベント</h3>
+                                <button id="addDoseBtn" class="btn btn-primary btn-sm">+ 追加</button>
+                            </div>
+                            <div id="doseEventsList" class="dose-events-list"></div>
+                        </div>
+
+                        <div class="action-bar">
+                            <button id="runSimulationBtn" class="btn btn-primary btn-action">シミュレーション実行</button>
+                            <button id="exportCsvBtn" class="btn btn-secondary btn-action">CSV 出力</button>
+                        </div>
+                        <div class="action-bar">
+                            <button id="saveSessionBtn" class="btn btn-secondary btn-action">セッション保存</button>
+                            <button id="loadSessionBtn" class="btn btn-secondary btn-action">セッション読込</button>
+                            <input type="file" id="loadSessionInput" accept=".json,application/json" style="display:none" aria-label="セッションファイルを選択">
+                        </div>
+
+                        <div id="simulationResults" class="hidden">
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <span class="result-label">最高 Cp</span>
+                                    <span id="simMaxCp" class="result-value">&mdash;</span>
+                                    <span class="result-unit">ng/mL</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">最高 Ce</span>
+                                    <span id="simMaxCe" class="result-value">&mdash;</span>
+                                    <span class="result-unit">ng/mL</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">最終 Ce</span>
+                                    <span id="simFinalCe" class="result-value">&mdash;</span>
+                                    <span class="result-unit">ng/mL</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">総投与量</span>
+                                    <span id="simTotalDose" class="result-value">&mdash;</span>
+                                    <span class="result-unit">µg</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">Ce &ge; MEAC</span>
+                                    <span id="simTimeAboveMeac" class="result-value">&mdash;</span>
+                                    <span class="result-unit">% の時間</span>
+                                </div>
+                                <div class="result-card">
+                                    <span class="result-label">記録の長さ</span>
+                                    <span id="simDuration" class="result-value">&mdash;</span>
+                                    <span class="result-unit">分</span>
+                                </div>
+                            </div>
+
+                            <div class="chart-container">
+                                <canvas id="recordChart"></canvas>
+                            </div>
+
+                            <div class="control-card">
+                                <div class="card-title">投与中止後の減衰予測</div>
+                                <p class="model-note" id="decrementReference" style="margin-top:0;margin-bottom:8px"></p>
+                                <div class="decrement-list" id="decrementList"></div>
+                            </div>
+
+                            <!-- Per-patient MEAC estimation -->
+                            <div class="control-card">
+                                <div class="dose-events-header">
+                                    <h3>個体化 MEAC 推定</h3>
+                                    <button id="addObservationBtn" class="btn btn-primary btn-sm">+ 鎮痛評価</button>
+                                </div>
+                                <p class="model-note" style="margin-top:0">
+                                    「その時刻に鎮痛が十分だったか」を記録すると、その患者自身の MEAC の事後分布を更新します。
+                                    記録が 0 件のときは母集団曲線と一致し、記録が増えるほど個体化されます。
+                                </p>
+
+                                <div id="observationsList" class="observations-list"></div>
+
+                                <div class="results-grid results-grid-fit" style="margin-top:12px">
+                                    <div class="result-card">
+                                        <span class="result-label">推定 MEAC</span>
+                                        <span id="meacEstimate" class="result-value">&mdash;</span>
+                                        <span class="result-unit">ng/mL</span>
+                                    </div>
+                                    <div class="result-card">
+                                        <span class="result-label">90% 信用区間</span>
+                                        <span id="meacInterval" class="result-value result-value-sm">&mdash;</span>
+                                        <span class="result-unit">ng/mL</span>
+                                    </div>
+                                    <div class="result-card">
+                                        <span class="result-label">最終 Ce での鎮痛確率</span>
+                                        <span id="meacProbAtFinal" class="result-value">&mdash;</span>
+                                        <span class="result-unit">%</span>
+                                    </div>
+                                    <div class="result-card">
+                                        <span class="result-label">記録数</span>
+                                        <span id="meacObsCount" class="result-value">0</span>
+                                        <span class="result-unit">件</span>
+                                    </div>
+                                </div>
+
+                                <div class="chart-container" style="margin-top:12px;margin-bottom:8px">
+                                    <canvas id="individualCurveChart"></canvas>
+                                </div>
+
+                                <p class="model-note" id="meacModelComparison"></p>
+
+                                <details class="disclosure" style="margin-top:8px;margin-bottom:0">
+                                    <summary>推定の前提と限界</summary>
+                                    <div>
+                                        <p class="fine-print" id="meacAssumptions"></p>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+
+                        <div class="step-nav-bottom">
+                            <button class="btn btn-secondary btn-block btn-back" data-goto="1">
+                                &#9664; 鎮痛評価に戻る
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Modal -->
+    <div id="patientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>患者情報</h3>
+                <button id="closePatientModal" class="btn-close">&times;</button>
+            </div>
+            <form id="patientForm" class="modal-body">
+                <div class="form-group">
+                    <label for="editPatientId">患者 ID</label>
+                    <input type="text" id="editPatientId" required>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="editAge">年齢</label>
+                        <div class="stepper-row">
+                            <button type="button" class="stepper-btn stepper-minus" data-target="editAge" data-step="1" aria-label="減らす">&#8722;</button>
+                            <input type="number" id="editAge" class="stepper-input" min="18" max="100" step="1" value="45" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-plus" data-target="editAge" data-step="1" aria-label="増やす">&#43;</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editWeight">体重 (kg)</label>
+                        <div class="stepper-row">
+                            <button type="button" class="stepper-btn stepper-minus" data-target="editWeight" data-step="1" aria-label="減らす">&#8722;</button>
+                            <input type="number" id="editWeight" class="stepper-input" min="30" max="200" step="0.5" value="60" inputmode="decimal">
+                            <button type="button" class="stepper-btn stepper-plus" data-target="editWeight" data-step="1" aria-label="増やす">&#43;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="editHeight">身長 (cm)</label>
+                        <div class="stepper-row">
+                            <button type="button" class="stepper-btn stepper-minus" data-target="editHeight" data-step="1" aria-label="減らす">&#8722;</button>
+                            <input type="number" id="editHeight" class="stepper-input" min="130" max="220" step="1" value="165" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-plus" data-target="editHeight" data-step="1" aria-label="増やす">&#43;</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>BMI</label>
+                        <div class="bmi-display">
+                            <span id="bmiCalculated" class="bmi-value">22.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>性別</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="sex" value="male" checked> 男性</label>
+                            <label class="radio-label"><input type="radio" name="sex" value="female"> 女性</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ASA-PS</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="asa" value="1-2" checked> I-II</label>
+                            <label class="radio-label"><input type="radio" name="asa" value="3-4"> III-IV</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editAnesthesiaStart">麻酔開始時刻</label>
+                    <input type="time" id="editAnesthesiaStart" class="time-input" value="09:00">
+                </div>
+
+                <p class="fine-print">
+                    実装した 3 つの PK モデルのうち体重を共変量に持つのは Bae モデルのみで、Scott-Stanski と Shafer は体重共変量を持たない固定パラメータです。年齢・性別・身長・ASA-PS は記録用で、濃度計算には使用しません。なお Scott &amp; Stanski は加齢に伴い必要量が減ることを示していますが (20 歳→89 歳で 50% 減少)、それは薬力学的な脳感受性の変化であって PK の変化ではないため、年齢は Ce 予測には反映されません。
+                </p>
+            </form>
+            <div class="modal-footer">
+                <button id="cancelPatientEdit" class="btn btn-secondary">キャンセル</button>
+                <button type="submit" form="patientForm" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dose Event Modal -->
+    <div id="doseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>投与イベントの追加</h3>
+                <button id="closeDoseModal" class="btn-close">&times;</button>
+            </div>
+            <form id="doseForm" class="modal-body">
+                <div class="form-group">
+                    <label for="doseTime">時刻</label>
+                    <div class="time-input-row">
+                        <input type="time" id="doseTime" class="time-input" required>
+                        <button type="button" id="doseTimeNowBtn" class="btn btn-secondary time-now-btn">現在</button>
+                    </div>
+                    <small class="form-hint">麻酔開始: <span id="anesthesiaStartReference">09:00</span></small>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="doseBolusAmount">ボーラス (µg)</label>
+                        <div class="stepper-row">
+                            <button type="button" class="stepper-btn stepper-minus" data-target="doseBolusAmount" data-step="25" aria-label="減らす">&#8722;</button>
+                            <input type="number" id="doseBolusAmount" class="stepper-input" min="0" max="2000" step="25" value="0" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-plus" data-target="doseBolusAmount" data-step="25" aria-label="増やす">&#43;</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="doseContinuousRate">持続 (µg/hr)</label>
+                        <div class="stepper-row">
+                            <button type="button" class="stepper-btn stepper-minus" data-target="doseContinuousRate" data-step="10" aria-label="減らす">&#8722;</button>
+                            <input type="number" id="doseContinuousRate" class="stepper-input" min="0" max="1000" step="10" value="0" inputmode="numeric">
+                            <button type="button" class="stepper-btn stepper-plus" data-target="doseContinuousRate" data-step="10" aria-label="増やす">&#43;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="fine-print">
+                    持続速度はこのイベントの時刻から次のイベントまで継続します。投与を中止した時刻は持続 0 µg/hr のイベントとして登録してください。
+                </p>
+            </form>
+            <div class="modal-footer">
+                <button id="cancelDoseAdd" class="btn btn-secondary">キャンセル</button>
+                <button type="submit" form="doseForm" class="btn btn-primary">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analgesia Observation Modal -->
+    <div id="observationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>鎮痛評価の記録</h3>
+                <button id="closeObservationModal" class="btn-close">&times;</button>
+            </div>
+            <form id="observationForm" class="modal-body">
+                <div class="form-group">
+                    <label for="observationTime">評価した時刻</label>
+                    <div class="time-input-row">
+                        <input type="time" id="observationTime" class="time-input" required>
+                        <button type="button" id="observationTimeNowBtn" class="btn btn-secondary time-now-btn">現在</button>
+                    </div>
+                    <small class="form-hint">麻酔開始: <span id="observationStartReference">09:00</span></small>
+                </div>
+
+                <div class="form-group">
+                    <label>その時刻の鎮痛は十分でしたか</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="adequate" value="yes" checked> 十分だった</label>
+                        <label class="radio-label"><input type="radio" name="adequate" value="no"> 不十分だった</label>
+                    </div>
+                </div>
+
+                <p class="fine-print">
+                    「不十分」は、体動・追加投与を要した・術後 VAS が閾値を超えた等、その時点の Ce では鎮痛が足りなかったと判断した状況を指します。判定基準は 1 症例のなかで一貫させてください。
+                </p>
+            </form>
+            <div class="modal-footer">
+                <button id="cancelObservationAdd" class="btn btn-secondary">キャンセル</button>
+                <button type="submit" form="observationForm" class="btn btn-primary">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/models.js"></script>
+    <script src="js/fentanyl-pk.js"></script>
+    <script src="js/analgesia.js"></script>
+    <script src="js/individualisation.js"></script>
+    <script src="js/simulation-engine.js"></script>
+    <script src="js/realtime-engine.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

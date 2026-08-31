@@ -1,0 +1,11 @@
+{
+  "name": "fentanyl-ce-simulator",
+  "version": "1.0.0",
+  "description": "Fentanyl effect-site concentration and analgesia simulator (educational / research use)",
+  "private": true,
+  "scripts": {
+    "test": "node validation/validate-pk.js && node validation/validate-analgesia.js && node validation/validate-individualisation.js",
+    "serve": "python3 -m http.server 8777"
+  },
+  "license": "MIT"
+}
