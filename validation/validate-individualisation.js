@@ -187,11 +187,11 @@ console.log('\n=== 8. Worked example ===');
     ];
     const posterior = IndividualMEAC.posterior(observations);
     const s = IndividualMEAC.summary(posterior);
-    console.log(`        観測: ${observations.map(o => `${o.ce} ${o.adequate ? '十分' : '不十分'}`).join(' / ')}`);
-    console.log(`        推定 MEAC ${s.median.toFixed(2)} ng/mL (90% CI ${s.lower.toFixed(2)}-${s.upper.toFixed(2)})`);
+    console.log(`        observations: ${observations.map(o => `${o.ce} ${o.adequate ? 'adequate' : 'inadequate'}`).join(' / ')}`);
+    console.log(`        estimated MEAC ${s.median.toFixed(2)} ng/mL (90% CI ${s.lower.toFixed(2)}-${s.upper.toFixed(2)})`);
     for (const ce of [1.0, 1.5, 2.0, 2.5]) {
-        console.log(`        Ce ${ce.toFixed(1)}: 個体化 ${(IndividualMEAC.probabilityAdequate(ce, posterior) * 100).toFixed(0)}%` +
-            `  母集団 ${(Analgesia.probability(ce, Analgesia.MEAC) * 100).toFixed(0)}%`);
+        console.log(`        Ce ${ce.toFixed(1)}: individualised ${(IndividualMEAC.probabilityAdequate(ce, posterior) * 100).toFixed(0)}%` +
+            `  population ${(Analgesia.probability(ce, Analgesia.MEAC) * 100).toFixed(0)}%`);
     }
     check('the worked example puts the threshold between the last inadequate and adequate probes',
         s.median > 1.10 && s.median < 2.10, `${s.median.toFixed(2)} ng/mL`);

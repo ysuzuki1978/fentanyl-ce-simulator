@@ -80,7 +80,7 @@ class MainController {
 
     updatePatientDisplay() {
         document.getElementById('headerPatientSummary').textContent =
-            `${this.patient.age}歳 ${this.patient.weight}kg`;
+            `${this.patient.age} y ${this.patient.weight} kg`;
         this.updateWeightWarning();
     }
 
@@ -98,7 +98,7 @@ class MainController {
             const range = model.validWeightRange;
             if (range && (w < range[0] || w > range[1])) {
                 messages.push(
-                    `体重 ${w} kg は ${model.shortLabel} モデルで検討された体重範囲 (${range[0]}〜${range[1]} kg) の外です。`
+                    `A weight of ${w} kg is outside the range studied for the ${model.shortLabel} model (${range[0]}-${range[1]} kg).`
                 );
             }
         }
@@ -109,9 +109,9 @@ class MainController {
         const fixedShown = this.activeModelIds().some(id => !FentanylModels[id].weightScaled);
         if (fixedShown && (w < 40 || w > 90)) {
             messages.push(
-                '体重共変量を持たない固定パラメータのモデルを表示しています。' +
-                'Shibutani ら (PMID 15329584) は体重が増えるほど Shafer モデルが濃度を過大評価すると報告しており、' +
-                'この体重域では体重を共変量に持つ Bae モデルとの差を確認してください。'
+                'You are viewing a fixed-parameter model with no body-weight covariate. ' +
+                'Shibutani et al (PMID 15329584) report that the Shafer model overestimates concentration increasingly as weight rises, ' +
+                'so at this weight compare it against the Bae model, which does carry a weight covariate.'
             );
         }
 
@@ -388,7 +388,7 @@ class MainController {
 
         const validation = candidate.validate();
         if (!validation.isValid) {
-            alert('入力エラー:\n' + validation.errors.join('\n'));
+            alert('Input error:\n' + validation.errors.join('\n'));
             return;
         }
 
@@ -455,28 +455,28 @@ class MainController {
         const peaks = ids.map(id => {
             const m = FentanylModels[id];
             const { peakTime } = timeToPeakEffect(m.getParameters(this.patient));
-            return `${m.shortLabel} ${peakTime.toFixed(1)} 分`;
+            return `${m.shortLabel} ${peakTime.toFixed(1)} min`;
         }).join(' / ');
 
         const primary = FentanylModels[this.primaryModelId()];
         document.getElementById('modelSummary').innerHTML =
-            `鎮痛評価の主指標: <strong>${primary.shortLabel}</strong>` +
+            `Primary model for the analgesia readout: <strong>${primary.shortLabel}</strong>` +
             `${primary.isHybrid ? '<span class="hybrid-flag">HYBRID</span>' : ''}` +
-            ` &middot; ボーラス後 Ce ピーク: ${peaks}`;
+            ` &middot; Ce peak after a bolus: ${peaks}`;
 
         const parts = ids.map(id => {
             const m = FentanylModels[id];
             const { peakTime, peakFraction } = timeToPeakEffect(m.getParameters(this.patient));
             return `<strong>${m.fullName}</strong>${m.isHybrid ? '<span class="hybrid-flag">HYBRID</span>' : ''}<br>` +
-                `ボーラス後 Ce ピーク: ${peakTime.toFixed(1)} 分 / 初期血漿濃度の ${(peakFraction * 100).toFixed(0)}%<br>` +
+                `Ce peak after a bolus: ${peakTime.toFixed(1)} min, at ${(peakFraction * 100).toFixed(0)}% of the initial plasma concentration<br>` +
                 `${m.note}<br>${m.reference}`;
         });
 
         if (this.modelMode === 'all') {
             parts.push(
-                `3 モデルは同じ ke0 = ${FENTANYL_KE0} /min を用いていますが、この ke0 は Scott &amp; Stanski の PK と同時推定された値です。` +
-                `他の PK に流用するとボーラス後のピーク時刻がずれます。鎮痛評価は ` +
-                `${FentanylModels[FENTANYL_DEFAULT_MODEL].shortLabel} の Ce を主指標として表示します。`
+                `All three models use the same ke0 = ${FENTANYL_KE0} /min, but that ke0 was estimated jointly with the Scott &amp; Stanski PK. ` +
+                `Transplanting it onto another PK model shifts the post-bolus peak time. The analgesia readout uses ` +
+                `the Ce from ${FentanylModels[FENTANYL_DEFAULT_MODEL].shortLabel} as its primary value.`
             );
         }
         document.getElementById('modelNote').innerHTML = parts.join('<br><br>');
@@ -514,7 +514,7 @@ class MainController {
     addRealtimeBolus() {
         const bolus = this.readNumber('rtBolus', 0);
         if (!(bolus > 0)) {
-            alert('追加するボーラス量を 0 より大きい値に設定してください。');
+            alert('Set the extra bolus to a value greater than 0.');
             return;
         }
         this.engine.applyBolus(bolus);
@@ -523,7 +523,7 @@ class MainController {
 
     recordSnapshot() {
         const state = this.engine.getState();
-        const label = `記録 #${state.snapshots.length + 1}`;
+        const label = `Record #${state.snapshots.length + 1}`;
         this.engine.takeSnapshot(label);
         this.renderSnapshots(this.engine.getState());
     }
@@ -696,9 +696,9 @@ class MainController {
 
         if (primary && primary.ce > 0) {
             banner.innerHTML =
-                `リアルタイム予測の現在値 (${FentanylModels[this.primaryModelId()].shortLabel}) : ` +
+                `Current real-time prediction (${FentanylModels[this.primaryModelId()].shortLabel}): ` +
                 `<strong>Ce ${primary.ce.toFixed(3)} ng/mL</strong> ` +
-                `<button type="button" class="btn btn-secondary btn-sm" id="useCurrentCeBtn" style="margin-left:8px">この値を使う</button>`;
+                `<button type="button" class="btn btn-secondary btn-sm" id="useCurrentCeBtn" style="margin-left:8px">Use this value</button>`;
             banner.classList.remove('hidden');
             document.getElementById('useCurrentCeBtn').addEventListener('click', () => {
                 document.getElementById('evalCe').value = primary.ce.toFixed(2);
@@ -734,14 +734,13 @@ class MainController {
             t90 === null ? '> 100' : (t90 / 60).toFixed(1);
 
         document.getElementById('targetDesignNote').innerHTML =
-            '維持速度は定常状態の関係 rate = Ce &times; CL から求めた値です。' +
-            'ただしフェンタニルは第 3 コンパートメントが大きく (' + model.shortLabel +
-            ' で V3 ' + pk.v3.toFixed(0) + ' L) その平衡が遅いため、' +
-            'この速度を一定で続けても Ce が目標の 90% に達するのは約 ' +
-            (t90 === null ? '100 時間以上' : (t90 / 60).toFixed(1) + ' 時間') +
-            '後です。手術時間内に目標 Ce を保つにはボーラスの併用が必要になります。' +
-            '負荷ボーラスは空の患者にボーラス単独を投与したときのピーク Ce が目標値に一致する量で、' +
-            '実際には分布相のあいだ Ce が目標を超えます。効果発現はボーラス後に Ce がピークに達するまでの時間です。';
+            'The maintenance rate comes from the steady-state relation rate = Ce &times; CL. ' +
+            'Fentanyl has a large third compartment, however (' + model.shortLabel +
+            ' gives V3 ' + pk.v3.toFixed(0) + ' L), and it equilibrates slowly, so holding this rate constant reaches 90% of the target Ce only after about ' +
+            (t90 === null ? 'more than 100 hours' : (t90 / 60).toFixed(1) + ' hours') +
+            '. Boluses are therefore needed alongside it to hold a target Ce within a normal operating time. ' +
+            'The loading bolus is the dose whose peak Ce in an empty patient equals the target; in practice Ce overshoots the target during the distribution phase. ' +
+            'Time to peak is the interval from the bolus until Ce reaches its maximum.';
     }
 
     // =============================================
@@ -770,7 +769,7 @@ class MainController {
         const event = new DoseEvent(minutesFromStart, bolus, rate);
         const validation = event.validate();
         if (!validation.isValid) {
-            alert('入力エラー:\n' + validation.errors.join('\n'));
+            alert('Input error:\n' + validation.errors.join('\n'));
             return;
         }
 
@@ -787,7 +786,7 @@ class MainController {
         if (!this.doseEvents.length) {
             const empty = document.createElement('div');
             empty.className = 'dose-events-empty';
-            empty.textContent = '投与イベントがまだありません。「+ 追加」から登録してください。';
+            empty.textContent = 'No dose events yet. Add one with "+ Add".';
             container.appendChild(empty);
             return;
         }
@@ -800,25 +799,25 @@ class MainController {
             info.className = 'dose-info';
 
             const title = document.createElement('h4');
-            title.textContent = `${event.timeInMinutes} 分 (${event.formattedClockTime(this.patient)})`;
+            title.textContent = `${event.timeInMinutes} min (${event.formattedClockTime(this.patient)})`;
 
             const details = document.createElement('div');
             details.className = 'dose-details';
 
             if (event.bolusUg > 0) {
                 const span = document.createElement('span');
-                span.textContent = `ボーラス ${event.bolusUg.toFixed(0)} µg`;
+                span.textContent = `Bolus ${event.bolusUg.toFixed(0)} µg`;
                 details.appendChild(span);
             }
             if (event.continuousUgHr > 0) {
                 const span = document.createElement('span');
-                span.textContent = `持続 ${event.continuousUgHr.toFixed(0)} µg/hr`;
+                span.textContent = `Infusion ${event.continuousUgHr.toFixed(0)} µg/hr`;
                 details.appendChild(span);
             }
             if (event.bolusUg <= 0 && event.continuousUgHr <= 0) {
                 const span = document.createElement('span');
                 span.className = 'dose-stop';
-                span.textContent = '投与中止';
+                span.textContent = 'Dosing stopped';
                 details.appendChild(span);
             }
 
@@ -828,7 +827,7 @@ class MainController {
             const del = document.createElement('button');
             del.className = 'delete-dose';
             del.textContent = '×';
-            del.setAttribute('aria-label', 'この投与イベントを削除');
+            del.setAttribute('aria-label', 'Delete this dose event');
             del.addEventListener('click', () => {
                 this.doseEvents.splice(index, 1);
                 this.renderDoseEvents();
@@ -842,7 +841,7 @@ class MainController {
 
     runRecordSimulation() {
         if (!this.doseEvents.length) {
-            alert('投与イベントが登録されていません。');
+            alert('No dose events have been entered.');
             return;
         }
 
@@ -865,7 +864,7 @@ class MainController {
     // =============================================
     showObservationModal() {
         if (!this.simulationResult) {
-            alert('先に投与イベントを登録してシミュレーションを実行してください。\n記録した時刻の Ce が必要です。');
+            alert('Enter dose events and run the simulation first.\nThe Ce at the recorded time is required.');
             return;
         }
         document.getElementById('observationTime').value = this.patient.formattedStartTime;
@@ -894,13 +893,13 @@ class MainController {
         const observation = new AnalgesiaObservation(minutesFromStart, adequate);
         const validation = observation.validate();
         if (!validation.isValid) {
-            alert('入力エラー:\n' + validation.errors.join('\n'));
+            alert('Input error:\n' + validation.errors.join('\n'));
             return;
         }
 
         const run = this.simulationResult[this.primaryModelId()];
         if (minutesFromStart > run.durationMin) {
-            alert(`評価時刻がシミュレーション範囲 (最大 ${run.durationMin.toFixed(0)} 分) を超えています。`);
+            alert(`The assessment time is beyond the simulated range (maximum ${run.durationMin.toFixed(0)} min).`);
             return;
         }
 
@@ -967,7 +966,7 @@ class MainController {
         if (!this.observations.length) {
             const empty = document.createElement('div');
             empty.className = 'dose-events-empty';
-            empty.textContent = '鎮痛評価の記録がありません。母集団曲線をそのまま表示しています。';
+            empty.textContent = 'No analgesia assessments recorded. The population curve is shown unchanged.';
             container.appendChild(empty);
             return;
         }
@@ -982,13 +981,13 @@ class MainController {
             info.className = 'dose-info';
             const title = document.createElement('h4');
             title.textContent = `${observation.formattedClockTime(this.patient)} — ` +
-                (observation.adequate ? '鎮痛十分' : '鎮痛不十分');
+                (observation.adequate ? 'Adequate' : 'Inadequate');
             const details = document.createElement('div');
             details.className = 'dose-details';
             const span = document.createElement('span');
             span.textContent = ce === null
-                ? 'Ce 算出不可'
-                : `その時点の Ce ${ce.toFixed(3)} ng/mL (${FentanylModels[primaryId].shortLabel})`;
+                ? 'Ce unavailable'
+                : `Ce at that time ${ce.toFixed(3)} ng/mL (${FentanylModels[primaryId].shortLabel})`;
             details.appendChild(span);
             info.appendChild(title);
             info.appendChild(details);
@@ -996,7 +995,7 @@ class MainController {
             const del = document.createElement('button');
             del.className = 'delete-dose';
             del.textContent = '×';
-            del.setAttribute('aria-label', 'この鎮痛評価を削除');
+            del.setAttribute('aria-label', 'Delete this assessment');
             del.addEventListener('click', () => {
                 this.observations.splice(index, 1);
                 this.renderIndividualisation();
@@ -1017,17 +1016,17 @@ class MainController {
         const curve = IndividualMEAC.curve(posterior, maxCe, 200);
         const asPoints = (ys) => curve.ce.map((x, i) => ({ x, y: ys[i] }));
 
-        const options = this.baseChartOptions('鎮痛が十分である確率');
+        const options = this.baseChartOptions('Probability that analgesia is adequate');
         options.scales = {
             x: {
                 type: 'linear', min: 0, max: maxCe,
-                title: { display: true, text: '効果部位濃度 Ce (ng/mL)', color: '#8B949E', font: { size: 10 } },
+                title: { display: true, text: 'Effect-site concentration Ce (ng/mL)', color: '#8B949E', font: { size: 10 } },
                 ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
                 grid: { color: 'rgba(255,255,255,0.06)' }
             },
             y: {
                 beginAtZero: true, max: 1,
-                title: { display: true, text: '鎮痛が十分である確率', font: { size: 10 }, color: '#8B949E' },
+                title: { display: true, text: 'Probability that analgesia is adequate', font: { size: 10 }, color: '#8B949E' },
                 ticks: { color: '#8B949E', callback: (v) => `${Math.round(v * 100)}%` },
                 grid: { color: 'rgba(255,255,255,0.06)' }
             }
@@ -1038,25 +1037,25 @@ class MainController {
             data: {
                 datasets: [
                     {
-                        label: '母集団 (Bae 2020)',
+                        label: 'Population (Bae 2020)',
                         data: asPoints(curve.population),
                         borderColor: '#8B949E', borderWidth: 1.5, borderDash: [5, 4],
                         pointRadius: 0, fill: false, tension: 0.1
                     },
                     {
-                        label: 'この患者の推定',
+                        label: 'This patient (estimated)',
                         data: asPoints(curve.individual),
                         borderColor: '#2FBFA8', borderWidth: 2.5,
                         pointRadius: 0, fill: false, tension: 0.1
                     },
                     {
-                        label: '鎮痛十分の記録',
+                        label: 'Recorded adequate',
                         data: paired.filter(o => o.adequate).map(o => ({ x: o.ce, y: 1 })),
                         borderColor: '#2FBFA8', backgroundColor: '#2FBFA8',
                         pointRadius: 5, pointStyle: 'circle', showLine: false
                     },
                     {
-                        label: '鎮痛不十分の記録',
+                        label: 'Recorded inadequate',
                         data: paired.filter(o => !o.adequate).map(o => ({ x: o.ce, y: 0 })),
                         borderColor: '#D85A30', backgroundColor: '#D85A30',
                         pointRadius: 5, pointStyle: 'triangle', showLine: false
@@ -1086,24 +1085,22 @@ class MainController {
         });
 
         element.innerHTML =
-            `同じ記録を各 PK モデルで読んだときの推定 MEAC (ng/mL): ${parts.join(' / ')}。` +
-            'PK モデルの誤差はそのまま閾値推定に吸収されるため、この広がりは患者ではなくモデルの差を表します。';
+            `Estimated MEAC (ng/mL) when the same records are read through each PK model: ${parts.join(' / ')}. ` +
+            'Error in the PK model is absorbed directly into the threshold estimate, so this spread reflects the difference between models, not the patient.';
     }
 
     renderMeacAssumptions(posterior) {
         const s = posterior.scales;
         document.getElementById('meacAssumptions').innerHTML =
-            `事前分布は Bae 2020 (PMID 32861508) の MEAC 中央値 ${Analgesia.MEAC.median} ng/mL・` +
-            `IQR ${Analgesia.MEAC.q1}-${Analgesia.MEAC.q3} から当てはめた log-logistic を、` +
-            `患者間成分と患者内成分に分解したものです。患者内変動は ${IndividualMEAC.withinPatientSource} を用い、` +
-            `対数スケールで sd_total ${s.sdTotal.toFixed(3)} = sd_between ${s.sdBetween.toFixed(3)} ` +
-            `+ sd_within ${s.sdWithin.toFixed(3)} と分解しました。` +
-            'この分解により、記録が 0 件のときの予測分布は公表された母集団曲線に一致します。<br><br>' +
-            '限界: 事前分布も患者内変動もいずれも術後の研究に由来するため、術中の外科的侵襲への適用は' +
-            '出典が支持しない外挿です。また Bouillon 2004 (PMID 15166553) が示すとおりオピオイド単独では' +
-            '反応を消せず、催眠薬との相乗効果で作用するため、フェンタニル単独の閾値が術中の反応を' +
-            '予測できる精度には原理的な上限があります。推定値は必ず、それを算出した PK モデルとともに' +
-            '解釈してください。';
+            `The prior is a log-logistic fitted to the Bae 2020 (PMID 32861508) MEAC median ${Analgesia.MEAC.median} ng/mL ` +
+            `and IQR ${Analgesia.MEAC.q1}-${Analgesia.MEAC.q3}, decomposed into a between-patient and a within-patient component. ` +
+            `Within-patient variability is taken from ${IndividualMEAC.withinPatientSource}, giving on the log scale ` +
+            `sd_total ${s.sdTotal.toFixed(3)} = sd_between ${s.sdBetween.toFixed(3)} ` +
+            `+ sd_within ${s.sdWithin.toFixed(3)}. ` +
+            'Because of this decomposition, the predictive distribution with zero records matches the published population curve.<br><br>' +
+            'Limitations: both the prior and the within-patient variability come from postoperative studies, so applying them to intraoperative surgical stimulus is an extrapolation the sources do not support. ' +
+            'As Bouillon 2004 (PMID 15166553) shows, an opioid alone cannot abolish the response and acts synergistically with a hypnotic, so there is a fundamental ceiling on how well a fentanyl-alone threshold can predict intraoperative responses. ' +
+            'Always interpret the estimate together with the PK model that produced it.';
     }
 
     renderRecordResults() {
@@ -1158,11 +1155,11 @@ class MainController {
         });
 
         const stopClock = this.patient.minutesToClockTime(stopMinutes)
-            .toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false });
+            .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
         document.getElementById('decrementReference').textContent =
-            `最終投与イベント ${stopClock} (${stopMinutes} 分) の時点ですべての投与を中止した場合に、` +
-            `Ce (${FentanylModels[id].shortLabel}) が各閾値を下回るまでの時間です。` +
-            `その時点の Ce は ${upToStop.finalState.ce.toFixed(3)} ng/mL です。`;
+            `Time for Ce (${FentanylModels[id].shortLabel}) to fall below each threshold if all dosing stops at the last dose event, ` +
+            `${stopClock} (${stopMinutes} min). ` +
+            `Ce at that moment is ${upToStop.finalState.ce.toFixed(3)} ng/mL.`;
 
         const thresholds = Analgesia.DECREMENT_THRESHOLDS;
         const times = decrementTimes(upToStop.finalState, run.pk, thresholds.map(t => t.value));
@@ -1172,10 +1169,10 @@ class MainController {
             const row = document.createElement('div');
             row.className = 'decrement-row';
             let display;
-            if (minutes === null) display = '12 時間超';
-            else if (minutes === 0) display = 'すでに下回る';
-            else if (minutes >= 60) display = `${Math.floor(minutes / 60)} 時間 ${Math.round(minutes % 60)} 分`;
-            else display = `${minutes.toFixed(0)} 分`;
+            if (minutes === null) display = 'over 12 h';
+            else if (minutes === 0) display = 'already below';
+            else if (minutes >= 60) display = `${Math.floor(minutes / 60)} h ${Math.round(minutes % 60)} min`;
+            else display = `${minutes.toFixed(0)} min`;
 
             row.innerHTML = `
                 <span class="decrement-target">Ce &lt; ${threshold.value.toFixed(2)} ng/mL<small>${threshold.label}</small></span>
@@ -1238,9 +1235,9 @@ class MainController {
 
     initializeRealtimeChart() {
         const ctx = document.getElementById('realtimeChart').getContext('2d');
-        const options = this.baseChartOptions('濃度 (ng/mL)');
+        const options = this.baseChartOptions('Concentration (ng/mL)');
         options.scales.x = {
-            title: { display: true, text: '経過時間 (分)', color: '#8B949E', font: { size: 10 } },
+            title: { display: true, text: 'Elapsed time (min)', color: '#8B949E', font: { size: 10 } },
             ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
             grid: { color: 'rgba(255,255,255,0.06)' }
         };
@@ -1336,25 +1333,25 @@ class MainController {
             data: {
                 datasets: [
                     {
-                        label: 'P(Ce ≥ その患者の MEAC)',
+                        label: 'P(Ce >= this patient\u2019s MEAC)',
                         data: asPoints(series.pMeac),
                         borderColor: '#2FBFA8', borderWidth: 2,
                         pointRadius: 0, fill: false, tension: 0.1
                     },
                     {
-                        label: 'P(Ce ≥ その患者の MEC)',
+                        label: 'P(Ce >= this patient\u2019s MEC)',
                         data: asPoints(series.pMec),
                         borderColor: '#D4A017', borderWidth: 2,
                         pointRadius: 0, fill: false, tension: 0.1
                     },
                     {
-                        label: 'イソフルラン MAC 減少率',
+                        label: 'Isoflurane MAC reduction',
                         data: asPoints(series.macFraction),
                         borderColor: '#9B72B0', borderWidth: 2, borderDash: [6, 3],
                         pointRadius: 0, fill: false, tension: 0.1
                     },
                     {
-                        label: '評価中の Ce',
+                        label: 'Ce being evaluated',
                         data: [],
                         borderColor: '#E6EDF3', borderWidth: 1.5, borderDash: [4, 3],
                         pointRadius: 0, fill: false
@@ -1362,19 +1359,19 @@ class MainController {
                 ]
             },
             options: {
-                ...this.baseChartOptions('割合'),
+                ...this.baseChartOptions('Proportion'),
                 scales: {
                     x: {
                         type: 'linear',
                         min: 0,
                         max: series.ce[series.ce.length - 1],
-                        title: { display: true, text: '効果部位濃度 Ce (ng/mL)', color: '#8B949E', font: { size: 10 } },
+                        title: { display: true, text: 'Effect-site concentration Ce (ng/mL)', color: '#8B949E', font: { size: 10 } },
                         ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
                         grid: { color: 'rgba(255,255,255,0.06)' }
                     },
                     y: {
                         beginAtZero: true, max: 1,
-                        title: { display: true, text: '母集団に占める割合', font: { size: 10 }, color: '#8B949E' },
+                        title: { display: true, text: 'Proportion of the population', font: { size: 10 }, color: '#8B949E' },
                         ticks: {
                             color: '#8B949E',
                             callback: (v) => `${Math.round(v * 100)}%`
@@ -1402,7 +1399,7 @@ class MainController {
         const ids = this.activeModelIds();
         const reference = this.simulationResult[ids[0]];
         const labels = reference.times.map(t =>
-            this.patient.minutesToClockTime(t).toLocaleTimeString('ja-JP',
+            this.patient.minutesToClockTime(t).toLocaleTimeString('en-GB',
                 { hour: '2-digit', minute: '2-digit', hour12: false }));
 
         const indices = reference.times.map((_, i) => i);
@@ -1415,16 +1412,16 @@ class MainController {
             type: 'line',
             data: { labels, datasets },
             options: {
-                ...this.baseChartOptions('濃度 (ng/mL)'),
+                ...this.baseChartOptions('Concentration (ng/mL)'),
                 scales: {
                     x: {
-                        title: { display: true, text: '時刻', color: '#8B949E', font: { size: 10 } },
+                        title: { display: true, text: 'Clock time', color: '#8B949E', font: { size: 10 } },
                         ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
                         grid: { color: 'rgba(255,255,255,0.06)' }
                     },
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: '濃度 (ng/mL)', font: { size: 10 }, color: '#8B949E' },
+                        title: { display: true, text: 'Concentration (ng/mL)', font: { size: 10 }, color: '#8B949E' },
                         ticks: { color: '#8B949E' },
                         grid: { color: 'rgba(255,255,255,0.06)' }
                     }
@@ -1455,7 +1452,7 @@ class MainController {
 
         table.innerHTML = `
             <thead><tr>
-                <th>濃度帯</th><th>Ce (ng/mL)</th><th>内容</th><th>出典</th>
+                <th>Band</th><th>Ce (ng/mL)</th><th>Description</th><th>Source</th>
             </tr></thead>
             <tbody>${rows}</tbody>
         `;
@@ -1481,7 +1478,7 @@ class MainController {
 
     exportCsv() {
         if (!this.simulationResult) {
-            alert('先にシミュレーションを実行してください。');
+            alert('Run the simulation first.');
             return;
         }
 
@@ -1492,23 +1489,23 @@ class MainController {
 
         const lines = [];
         lines.push(`# Fentanyl Ce Simulator ${APP_VERSION}`);
-        lines.push(`# 患者ID,${p.id},年齢,${p.age},体重,${p.weight} kg,身長,${p.height} cm,性別,${SexType.displayName(p.sex)},ASA-PS,${AsapsType.displayName(p.asaPS)},麻酔開始,${p.formattedStartTime}`);
-        lines.push(`# 主モデル,${FentanylModels[primaryId].fullName}`);
+        lines.push(`# PatientID,${p.id},Age,${p.age},Weight,${p.weight} kg,Height,${p.height} cm,Sex,${SexType.displayName(p.sex)},ASA-PS,${AsapsType.displayName(p.asaPS)},AnaesthesiaStart,${p.formattedStartTime}`);
+        lines.push(`# PrimaryModel,${FentanylModels[primaryId].fullName}`);
         lines.push(`# MEC,${Analgesia.MEC.median} ng/mL,MEAC,${Analgesia.MEAC.median} ng/mL,${Analgesia.MEAC.source}`);
 
         const meac = IndividualMEAC.summary(
             IndividualMEAC.posterior(this.observationsForModel(primaryId)));
-        lines.push(`# 個体化MEAC推定,${meac.median.toFixed(3)} ng/mL,90%CI,${meac.lower.toFixed(3)}-${meac.upper.toFixed(3)},記録数,${meac.observationCount}`);
+        lines.push(`# IndividualisedMEAC,${meac.median.toFixed(3)} ng/mL,90%CI,${meac.lower.toFixed(3)}-${meac.upper.toFixed(3)},Records,${meac.observationCount}`);
         for (const observation of this.observations) {
             const ce = this.ceAtTime(primaryId, observation.timeInMinutes);
-            lines.push(`# 鎮痛評価,${observation.formattedClockTime(p)},${observation.adequate ? '十分' : '不十分'},Ce,${ce === null ? 'NA' : ce.toFixed(4)}`);
+            lines.push(`# AnalgesiaAssessment,${observation.formattedClockTime(p)},${observation.adequate ? 'Adequate' : 'Inadequate'},Ce,${ce === null ? 'NA' : ce.toFixed(4)}`);
         }
 
-        const header = ['時刻', '経過(分)', 'ボーラス(µg)', '持続(µg/hr)'];
+        const header = ['ClockTime', 'Elapsed(min)', 'Bolus(µg)', 'Infusion(µg/hr)'];
         for (const id of FENTANYL_MODEL_IDS) {
             header.push(`Cp_${id}(ng/mL)`, `Ce_${id}(ng/mL)`);
         }
-        header.push('濃度帯', 'P(Ce>=MEAC)', 'P(Ce>=MEC)');
+        header.push('Band', 'P(Ce>=MEAC)', 'P(Ce>=MEC)');
         lines.push(header.join(','));
 
         for (let i = 0; i < reference.times.length; i++) {
@@ -1519,7 +1516,7 @@ class MainController {
             const rate = infusionRateAt(infusionChanges, t);
 
             const row = [
-                p.minutesToClockTime(t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }),
+                p.minutesToClockTime(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
                 t.toFixed(1),
                 bolus.toFixed(0),
                 rate.toFixed(1)
@@ -1561,10 +1558,10 @@ class MainController {
                 this.applySession(ev.target.result);
             } catch (error) {
                 console.error('session load failed:', error);
-                alert('読み込みエラー:\n' + error.message);
+                alert('Load error:\n' + error.message);
             }
         };
-        reader.onerror = () => alert('読み込みエラー:\nファイルを読み取れませんでした。');
+        reader.onerror = () => alert('Load error:\nThe file could not be read.');
         reader.readAsText(file);
     }
 
@@ -1573,19 +1570,19 @@ class MainController {
 
         const patientValidation = patient.validate();
         if (!patientValidation.isValid) {
-            throw new Error('患者データが不正です:\n' + patientValidation.errors.join('\n'));
+            throw new Error('The patient data is invalid:\n' + patientValidation.errors.join('\n'));
         }
         for (const event of doseEvents) {
             const v = event.validate();
             if (!v.isValid) {
-                throw new Error(`${event.timeInMinutes} 分の投与イベントが不正です:\n` + v.errors.join('\n'));
+                throw new Error(`The dose event at ${event.timeInMinutes} min is invalid:\n` + v.errors.join('\n'));
             }
         }
 
         for (const observation of observations) {
             const v = observation.validate();
             if (!v.isValid) {
-                throw new Error(`${observation.timeInMinutes} 分の鎮痛評価が不正です:\n` + v.errors.join('\n'));
+                throw new Error(`The analgesia assessment at ${observation.timeInMinutes} min is invalid:\n` + v.errors.join('\n'));
             }
         }
 

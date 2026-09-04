@@ -14,7 +14,7 @@ const SexType = {
     MALE: 0,
     FEMALE: 1,
     displayName(value) {
-        return value === this.MALE ? '男性' : '女性';
+        return value === this.MALE ? 'Male' : 'Female';
     }
 };
 
@@ -76,7 +76,7 @@ class Patient {
     }
 
     get formattedStartTime() {
-        return this.anesthesiaStartTime.toLocaleTimeString('ja-JP', {
+        return this.anesthesiaStartTime.toLocaleTimeString('en-GB', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
@@ -88,19 +88,19 @@ class Patient {
         const L = ValidationLimits.Patient;
 
         if (!this.id || this.id.trim().length === 0) {
-            errors.push('患者 ID を入力してください');
+            errors.push('Enter a patient ID');
         }
         if (!isFinite(this.age) || this.age < L.minimumAge || this.age > L.maximumAge) {
-            errors.push(`年齢は ${L.minimumAge}〜${L.maximumAge} 歳の範囲で入力してください`);
+            errors.push(`Age must be between ${L.minimumAge} and ${L.maximumAge} years`);
         }
         if (!isFinite(this.weight) || this.weight < L.minimumWeight || this.weight > L.maximumWeight) {
-            errors.push(`体重は ${L.minimumWeight}〜${L.maximumWeight} kg の範囲で入力してください`);
+            errors.push(`Weight must be between ${L.minimumWeight} and ${L.maximumWeight} kg`);
         }
         if (!isFinite(this.height) || this.height < L.minimumHeight || this.height > L.maximumHeight) {
-            errors.push(`身長は ${L.minimumHeight}〜${L.maximumHeight} cm の範囲で入力してください`);
+            errors.push(`Height must be between ${L.minimumHeight} and ${L.maximumHeight} cm`);
         }
         if (isFinite(this.bmi) && (this.bmi < L.minimumBMI || this.bmi > L.maximumBMI)) {
-            errors.push(`BMI が範囲外です (計算値: ${this.bmi.toFixed(1)})`);
+            errors.push(`BMI is out of range (calculated: ${this.bmi.toFixed(1)})`);
         }
 
         return { isValid: errors.length === 0, errors };
@@ -140,7 +140,7 @@ class DoseEvent {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('ja-JP', {
+        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false
@@ -152,13 +152,13 @@ class DoseEvent {
         const L = ValidationLimits.Dosing;
 
         if (!isFinite(this.timeInMinutes) || this.timeInMinutes < L.minimumTime || this.timeInMinutes > L.maximumTime) {
-            errors.push(`投与時刻は麻酔開始から ${L.minimumTime}〜${L.maximumTime} 分の範囲にしてください`);
+            errors.push(`Dose time must be between ${L.minimumTime} and ${L.maximumTime} min from the start of anaesthesia`);
         }
         if (!isFinite(this.bolusUg) || this.bolusUg < L.minimumBolus || this.bolusUg > L.maximumBolus) {
-            errors.push(`ボーラス量は ${L.minimumBolus}〜${L.maximumBolus} µg の範囲で入力してください`);
+            errors.push(`Bolus must be between ${L.minimumBolus} and ${L.maximumBolus} µg`);
         }
         if (!isFinite(this.continuousUgHr) || this.continuousUgHr < L.minimumContinuous || this.continuousUgHr > L.maximumContinuous) {
-            errors.push(`持続投与量は ${L.minimumContinuous}〜${L.maximumContinuous} µg/hr の範囲で入力してください`);
+            errors.push(`Infusion rate must be between ${L.minimumContinuous} and ${L.maximumContinuous} µg/hr`);
         }
 
         return { isValid: errors.length === 0, errors };
@@ -226,14 +226,14 @@ const FentanylSession = {
         try {
             data = JSON.parse(text);
         } catch (e) {
-            throw new Error('JSON として読み取れませんでした: ' + e.message);
+            throw new Error('Could not be parsed as JSON: ' + e.message);
         }
 
         if (!data || data.format !== this.FORMAT) {
-            throw new Error('このファイルは Fentanyl Ce Simulator のセッションファイルではありません。');
+            throw new Error('This file is not a Fentanyl Ce Simulator session file.');
         }
         if (!data.patient) {
-            throw new Error('セッションファイルに患者情報が含まれていません。');
+            throw new Error('The session file contains no patient information.');
         }
 
         const patient = Patient.fromJSON(data.patient);

@@ -86,19 +86,19 @@ const Analgesia = {
     MEC: {
         ...fitLogLogistic(0.72, 0.58, 1.05),
         label: 'MEC',
-        source: 'Bae 2020 (PMID 32861508) 中央値 0.72 / IQR 0.58-1.05'
+        source: 'Bae 2020 (PMID 32861508) median 0.72 / IQR 0.58-1.05'
     },
 
     MEAC: {
         ...fitLogLogistic(0.99, 0.76, 1.28),
         label: 'MEAC',
-        source: 'Bae 2020 (PMID 32861508) 中央値 0.99 / IQR 0.76-1.28'
+        source: 'Bae 2020 (PMID 32861508) median 0.99 / IQR 0.76-1.28'
     },
 
     /** Isoflurane MAC reduction, fitted to McEwan 1993 (50% at 1.67, 63% at 3). */
     MAC: {
         ...fitHyperbolicEmax(1.67, 50, 3.0, 63),
-        source: 'McEwan 1993 (PMID 8489058) の公表 3 点に当てはめた双曲 Emax'
+        source: 'Hyperbolic Emax fitted to the three published points of McEwan 1993 (PMID 8489058)'
     },
 
     SCALE_MAX: 6.0,
@@ -107,73 +107,73 @@ const Analgesia = {
     BANDS: [
         {
             id: 'sub',
-            name: '鎮痛閾値下',
+            name: 'Sub-analgesic',
             min: 0, max: 0.63,
             rangeLabel: '< 0.63',
             color: '#6E7681',
-            description: '術後鎮痛に必要とされた最小有効濃度の平均値を下回る領域。',
+            description: 'Below the mean minimum concentration reported as effective for postoperative analgesia.',
             source: 'Gourlay 1988 (PMID 3354866): MEC 0.63 ± 0.25 ng/mL'
         },
         {
             id: 'mec',
-            name: 'MEC 帯',
+            name: 'MEC band',
             min: 0.63, max: 0.99,
             rangeLabel: '0.63 – 0.99',
             color: '#D4A017',
-            description: '一部の患者で安静時痛が緩和され始めるが、鎮痛が十分と判定される濃度にはまだ届いていない患者が多い領域。',
-            source: 'Gourlay 1988 (PMID 3354866) MEC 0.63 / Bae 2020 (PMID 32861508) MEC 中央値 0.72'
+            description: 'Pain at rest begins to ease in some patients, but most have not yet reached the concentration judged adequate for analgesia.',
+            source: 'Gourlay 1988 (PMID 3354866) MEC 0.63 / Bae 2020 (PMID 32861508) MEC median 0.72'
         },
         {
             id: 'meac',
-            name: '術後鎮痛域',
+            name: 'Postoperative analgesia',
             min: 0.99, max: 1.67,
             rangeLabel: '0.99 – 1.67',
             color: '#2FBFA8',
-            description: '開腹術後の PACU で鎮痛が十分と判定された濃度の中央値を超える領域。半数以上の患者で術後痛が制御される。',
-            source: 'Bae 2020 (PMID 32861508): MEAC 中央値 0.99 (IQR 0.76-1.28) ng/mL'
+            description: 'Above the median concentration judged adequate in the PACU after open abdominal surgery. Postoperative pain is controlled in more than half of patients.',
+            source: 'Bae 2020 (PMID 32861508): MEAC median 0.99 (IQR 0.76-1.28) ng/mL'
         },
         {
             id: 'mac',
-            name: '術中補助域',
+            name: 'Intraoperative adjunct',
             min: 1.67, max: 3.26,
             rangeLabel: '1.67 – 3.26',
             color: '#5BA4CF',
-            description: 'イソフルラン MAC を 50% 以上減少させる領域。プロポフォールの Cp50 も 30-55% 低下する。',
-            source: 'McEwan 1993 (PMID 8489058): 1.67 ng/mL で MAC 50% 減少 / Kazama 1997 (PMID 9286884)'
+            description: 'Reduces isoflurane MAC by 50% or more. The propofol Cp50 also falls by 30-55%.',
+            source: 'McEwan 1993 (PMID 8489058): 50% MAC reduction at 1.67 ng/mL / Kazama 1997 (PMID 9286884)'
         },
         {
             id: 'incision',
-            name: '強侵襲対応域',
+            name: 'High-stimulus range',
             min: 3.26, max: 4.17,
             rangeLabel: '3.26 – 4.17',
             color: '#9B72B0',
-            description: 'N2O 70% 併用下で皮膚切開への体動を半数で抑える濃度から、血行動態・自律神経応答まで抑える濃度までの領域。',
-            source: 'Glass 1993 (PMID 8489055): 皮膚切開 Cp50 3.26 / Cp50-BAR 4.17 ng/mL'
+            description: 'From the concentration that suppresses movement to skin incision in half of patients under 70% N2O, up to the concentration that also suppresses the haemodynamic and autonomic response.',
+            source: 'Glass 1993 (PMID 8489055): skin incision Cp50 3.26 / Cp50-BAR 4.17 ng/mL'
         },
         {
             id: 'high',
-            name: '高濃度域',
+            name: 'High concentration',
             min: 4.17, max: Infinity,
             rangeLabel: '≥ 4.17',
             color: '#D85A30',
-            description: '自発呼吸下では呼吸数の低下が顕著になる領域。抜管を予定するなら Ce の減衰時間を確認する必要がある。',
-            source: 'Mildh 2001 (PMID 11574361): 呼吸数 50% 低下 EC50 3.5、分時換気量 50% 低下 EC50 6.1 ng/mL'
+            description: 'The fall in respiratory rate becomes marked in spontaneously breathing patients. Check the Ce decrement time before planning extubation.',
+            source: 'Mildh 2001 (PMID 11574361): EC50 3.5 for a 50% fall in respiratory rate, 6.1 ng/mL for a 50% fall in minute ventilation'
         }
     ],
 
     /** Thresholds offered in the decrement-time panel. */
     DECREMENT_THRESHOLDS: [
-        { value: 1.67, label: 'イソフルラン MAC 50% 減少 (McEwan 1993)' },
-        { value: 0.99, label: 'MEAC 中央値 (Bae 2020)' },
-        { value: 0.72, label: 'MEC 中央値 (Bae 2020)' },
-        { value: 0.50, label: '鎮痛と呼吸抑制の utility 境界 (Boom 2013)' }
+        { value: 1.67, label: '50% isoflurane MAC reduction (McEwan 1993)' },
+        { value: 0.99, label: 'MEAC median (Bae 2020)' },
+        { value: 0.72, label: 'MEC median (Bae 2020)' },
+        { value: 0.50, label: 'Analgesia-minus-respiratory-depression utility boundary (Boom 2013)' }
     ],
 
     FOOTNOTE:
-        'これらの濃度帯は、それぞれ異なる研究・異なる評価項目から得られた値を Ce の軸上に並べたものです。' +
-        '術後鎮痛の MEC / MEAC は開腹術後 PACU の安静時・体動時 VAS を基準とした値であり、術中の外科的侵襲に対する必要濃度とは別の概念です。' +
-        '術中の値 (MAC 減少、皮膚切開 Cp50) は吸入麻酔薬または N2O の併用下で得られたものであり、フェンタニル単独の値ではありません。' +
-        '気管挿管に対するフェンタニル単独の Ce50 は、一次文献を確認できなかったため本アプリでは表示していません。',
+        'These bands place values from different studies and different endpoints on a single Ce axis. ' +
+        'The postoperative MEC / MEAC are referenced to VAS at rest and on movement in the PACU after open abdominal surgery, which is a different concept from the concentration required against intraoperative surgical stimulus. ' +
+        'The intraoperative values (MAC reduction, skin-incision Cp50) were obtained with a volatile agent or N2O co-administered and are not fentanyl-alone values. ' +
+        'A fentanyl-alone Ce50 for tracheal intubation is not shown, because no primary source for it could be verified.',
 
     /** Fraction of the study population whose own threshold is reached at ce. */
     probability(ce, anchor) {
@@ -199,31 +199,31 @@ const Analgesia = {
     respiratoryStatus(ce) {
         if (ce < 0.5) {
             return {
-                display: '基準域',
-                source: 'Boom 2013 (PMID 23756452): 0.5 ng/mL 以下では鎮痛と呼吸抑制の utility が正'
+                display: 'Baseline',
+                source: 'Boom 2013 (PMID 23756452): the analgesia-minus-respiratory-depression utility is positive below 0.5 ng/mL'
             };
         }
         if (ce < 1.5) {
             return {
-                display: '軽度',
-                source: 'Boom 2013 (PMID 23756452): 0.5 ng/mL 超で utility が負に転じる'
+                display: 'Mild',
+                source: 'Boom 2013 (PMID 23756452): the utility turns negative above 0.5 ng/mL'
             };
         }
         if (ce < 3.5) {
             return {
-                display: 'CO2 応答低下域',
-                source: 'Cartwright 1983 (PMID 6414339): 1.5-3.0 ng/mL で CO2 応答曲線が 50% 抑制'
+                display: 'Reduced CO2 response',
+                source: 'Cartwright 1983 (PMID 6414339): the CO2 response curve is depressed by 50% at 1.5-3.0 ng/mL'
             };
         }
         if (ce < 6.1) {
             return {
-                display: '呼吸数低下域',
-                source: 'Mildh 2001 (PMID 11574361): 呼吸数 50% 低下の EC50 3.5 ng/mL'
+                display: 'Reduced respiratory rate',
+                source: 'Mildh 2001 (PMID 11574361): EC50 3.5 ng/mL for a 50% fall in respiratory rate'
             };
         }
         return {
-            display: '換気量低下域',
-            source: 'Mildh 2001 (PMID 11574361): 分時換気量 50% 低下の EC50 6.1 ng/mL'
+            display: 'Reduced minute ventilation',
+            source: 'Mildh 2001 (PMID 11574361): EC50 6.1 ng/mL for a 50% fall in minute ventilation'
         };
     },
 
@@ -241,7 +241,7 @@ const Analgesia = {
             metrics: [
                 {
                     key: 'pMeac',
-                    label: '術後痛が鎮痛される患者割合',
+                    label: 'Patients with postoperative pain controlled',
                     display: (pMeac * 100).toFixed(0),
                     unit: '%',
                     fraction: pMeac,
@@ -249,7 +249,7 @@ const Analgesia = {
                 },
                 {
                     key: 'pMec',
-                    label: 'MEC に到達している患者割合',
+                    label: 'Patients reaching their MEC',
                     display: (pMec * 100).toFixed(0),
                     unit: '%',
                     fraction: pMec,
@@ -257,7 +257,7 @@ const Analgesia = {
                 },
                 {
                     key: 'mac',
-                    label: 'イソフルラン MAC 減少',
+                    label: 'Isoflurane MAC reduction',
                     display: mac.toFixed(0),
                     unit: '%',
                     fraction: mac / this.MAC.emax,
@@ -265,7 +265,7 @@ const Analgesia = {
                 },
                 {
                     key: 'resp',
-                    label: '自発呼吸への影響',
+                    label: 'Effect on spontaneous ventilation',
                     display: resp.display,
                     unit: '',
                     fraction: null,

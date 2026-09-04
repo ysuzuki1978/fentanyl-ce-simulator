@@ -85,7 +85,7 @@ class AnalgesiaObservation {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('ja-JP', {
+        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
             hour: '2-digit', minute: '2-digit', hour12: false
         });
     }
@@ -93,7 +93,7 @@ class AnalgesiaObservation {
     validate() {
         const errors = [];
         if (!isFinite(this.timeInMinutes) || this.timeInMinutes < 0 || this.timeInMinutes > 1440) {
-            errors.push('評価時刻は麻酔開始から 0〜1440 分の範囲にしてください');
+            errors.push('Assessment time must be between 0 and 1440 min from the start of anaesthesia');
         }
         return { isValid: errors.length === 0, errors };
     }
@@ -109,7 +109,7 @@ class AnalgesiaObservation {
 
 const IndividualMEAC = {
     withinPatientCv: GOURLAY_WITHIN_PATIENT_CV,
-    withinPatientSource: 'Gourlay 1988 (PMID 3354866): 患者内 CV 30.2% (16-46%)',
+    withinPatientSource: 'Gourlay 1988 (PMID 3354866): within-patient CV 30.2% (16-46%)',
 
     GRID_MIN: 0.05,     // ng/mL
     GRID_MAX: 20.0,

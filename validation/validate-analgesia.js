@@ -133,7 +133,7 @@ console.log('\n=== 6. Monotonicity and range ===');
 console.log('\n=== 7. Reference values at clinically quoted concentrations ===');
 {
     const rows = [0.5, 0.72, 0.99, 1.5, 1.67, 3.0, 3.26, 4.17, 6.0];
-    console.log('        Ce      P(MEAC)  P(MEC)   MAC減少   帯');
+    console.log('        Ce      P(MEAC)  P(MEC)   MACred   Band');
     for (const ce of rows) {
         const e = Analgesia.evaluate(ce);
         console.log(`        ${ce.toFixed(2).padStart(5)}   ` +
