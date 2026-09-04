@@ -1,7 +1,21 @@
 # Fentanyl Ce Simulator V1.0.0
 
+> ## ⚠ 研究・教育目的専用 — 臨床使用を禁止します
+>
+> **本ソフトウェアを実際の患者の投与量決定・診断・治療方針の根拠として使用してはなりません。**
+>
+> - 医療機器ではありません。いかなる規制当局の承認・認証・届出も受けていません。
+> - 表示される濃度は母集団薬物動態モデルによる**理論値**であり、患者の実測濃度ではありません。
+> - 鎮痛指標は公表された母集団統計に基づく参考値であり、個々の患者の鎮痛充足度を示しません。
+> - 実装した 3 つの PK モデルは、**同一投与量に対して最大 1.8 倍異なる Ce** を与えます
+>   ([モデル間の差は小さくない](#モデル間の差は小さくない))。単一の数値を正解として扱えません。
+> - 前向き検証を行っていません。実測濃度との対比、臨床アウトカムとの対比のいずれも未実施です。
+>
+> 想定する用途は、薬物動態モデルの挙動を学ぶこと、モデル間の不一致を可視化すること、
+> および研究上のシミュレーションに限られます。
+
 フェンタニルの効果部位濃度 (Ce) を予測しながら、その濃度が鎮痛としてどの位置にあるかを
-文献値に紐づけて表示する教育・研究用シミュレータです。UI は同シリーズの
+文献値に紐づけて表示する研究・教育用シミュレータです。UI は同シリーズの
 Propofol TCI TIVA アプリに合わせた 3 ステップ構成です。
 
 - **Step 1 リアルタイム** — ボーラス / 持続投与に対する Cp・Ce を実時間で予測し、鎮痛指標を同時表示
@@ -37,6 +51,56 @@ Scott & Stanski の組み合わせだけです。
 "naive approach" として警告している、ke0 を別の PK モデルへ移植する際の問題そのものです。
 3 モデルすべてを実装し切り替え可能にしてありますが、hybrid の 2 つには
 UI 上で `HYBRID` バッジを付け、ピーク時刻のずれを常時表示しています。
+
+### ただし、この既定が最適とは限りません
+
+上の根拠は「PK と ke0 の内部整合性」です。**問いによっては別のモデルの方が適切になります。**
+これは本アプリを既定モデルだけで使うべきでない理由でもあるので、明示しておきます。
+
+**ke0 の影響は最初の 5 分でほぼ消えます。** ke0 を 0.10 / 0.147 / 0.25 と ±70% 振ったとき
+(PK は Bae 固定) の Ce の開きと、ke0 を固定して PK モデルを振ったときの開き:
+
+| 時刻 | ke0 を振った場合 | PK モデルを振った場合 |
+|---|---|---|
+| 3 分 | 1.94× | 1.79× |
+| 10 分 | **1.10×** | 1.80× |
+| 30 分 | **1.29×** | 1.53× |
+| 120 分 | **1.10×** | 1.28× |
+
+つまり ke0 の整合性は、MEC / MEAC 判定にとって最も効かない時間帯にしか効きません。
+MEAC はもともと定常状態 (Ce ≒ Cp) で定義された量なので、なおさらです。
+一方 **Bae 2020 は PK と MEAC を同一研究・同一患者・同一アッセイで決めており**、
+画面上の濃度と比較対象の閾値が同じ物差しに乗ります。
+
+60 kg・フェンタニル 100 µg + 50 µg (30 分) + 50 µg (70 分)・120 分の症例で、
+「Ce が MEAC 0.99 ng/mL を上回っていた時間の割合」:
+
+| モデル | MEAC 超過時間 |
+|---|---|
+| Scott & Stanski | 12.3% |
+| Shafer | 44.2% |
+| Bae | 43.8% |
+
+同じ投与記録に対する臨床的な答えが 3.6 倍違い、外れているのは既定の Scott & Stanski です。
+
+**用途別の目安:**
+
+| 見たいもの | 適したモデル | 理由 |
+|---|---|---|
+| ボーラス後のピーク時刻 | Scott & Stanski | 文献値 3.6 分 / 17% を再現する唯一の組 |
+| MEC / MEAC に対する充足 | Bae 2020 | 閾値と濃度が同一研究由来。体重共変量あり |
+| 投与終了後の減衰 | **3 モデルすべて** | 幅そのものが不確実性 (下記) |
+
+投与終了後については、効果で滴定した共通の起点 (Ce 1.5 ng/mL) から見るとモデル間の
+濃度差は 1.00–1.38× まで縮みますが、下降曲線が平坦なため**時刻の差は 2–3 倍に開きます**
+(手術 480 分後に MEAC を下回るまで: Scott & Stanski 152 分 / Shafer 83 分 / Bae 55 分)。
+Ce の予測が 10% ずれるだけで到達時刻は 30–92 分動きます。
+**減衰時間を分単位の予定として読むことはできません。** 順序と桁として扱ってください。
+
+なお覚醒そのものは、フェンタニル単独の Ce からは予測できません。覚醒を支配するのは
+併用する鎮静薬であり、フェンタニルの寄与は相乗作用を介した間接的なものです
+(Kazama 1998, PMID 9778007 ではフェンタニル 1 ng/mL がプロポフォール Cp50 を 30–44%
+低下させます)。相互作用モデルは本バージョンには実装していません。
 
 ### 1. Scott & Stanski 1987（既定）
 
@@ -318,11 +382,29 @@ validation/validate-individualisation.js  個体化推定の Evaluator（回復�
 
 ---
 
-## 免責
+## 免責 / Disclaimer
 
-教育・研究目的のシミュレータです。臨床診断・治療の根拠として使用しないでください。
-表示される濃度は母集団モデルによる理論値であり、個々の患者の実測濃度ではありません。
-鎮痛指標は文献の母集団統計に基づく参考値で、個々の患者の鎮痛充足度を示すものではありません。
+**本ソフトウェアは研究・教育目的に限定され、臨床使用を禁止します。**
+
+実際の患者の投与量決定・診断・治療方針の決定に使用してはなりません。医療機器ではなく、
+いかなる規制当局の承認・認証・届出も受けていません。表示される濃度は母集団モデルによる
+理論値であり、個々の患者の実測濃度ではありません。鎮痛指標は文献の母集団統計に基づく
+参考値で、個々の患者の鎮痛充足度を示すものではありません。実装した PK モデルは相互に
+最大 1.8 倍異なる Ce を与え、いずれが正しいかは本ソフトウェアでは決定できません。
+すべての臨床判断は、資格を持つ医療者が本ソフトウェアとは独立に行ってください。
+
+著者は、本ソフトウェアの使用または使用不能から生じるいかなる結果についても責任を負いません。
+
+> **This software is strictly for research and educational use. Clinical use is prohibited.**
+> It must not be used to determine drug dosing, to diagnose, or to guide treatment for any
+> patient. It is not a medical device and has received no regulatory approval or clearance.
+> Displayed concentrations are theoretical values from population pharmacokinetic models,
+> not measured concentrations in an individual. The analgesia readouts are reference
+> indicators derived from published population statistics and do not establish that any
+> individual patient is adequately analgesed. The three implemented PK models disagree with
+> one another by up to 1.8-fold for the same dose, and this software cannot determine which
+> is correct. All clinical decisions must be made by qualified clinicians independently of
+> this software. The authors accept no liability for any consequence of its use.
 
 YASUYUKI SUZUKI — Saiseikai Matsuyama Hospital / Ehime University Graduate School of Medicine
 

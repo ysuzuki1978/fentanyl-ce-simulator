@@ -22,13 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 DISCLAIMER FOR MEDICAL SOFTWARE:
-This software is intended for educational and research purposes only.
-It should not be used for clinical diagnosis or treatment decisions.
-All clinical judgments must be made by qualified medical professionals.
+This software is intended for research and educational purposes only.
+CLINICAL USE IS PROHIBITED. It must not be used to determine drug dosing,
+to diagnose, or to guide treatment for any patient.
+It is not a medical device and has received no approval, clearance, or
+registration from any regulatory authority.
+All clinical judgments must be made by qualified medical professionals
+independently of this software.
 The predicted concentrations are theoretical values from population
 pharmacokinetic models, not measured concentrations in an individual patient.
 The analgesia readouts are reference indicators derived from published
 population statistics and do not establish that any individual patient is
 adequately analgesed.
+The three implemented pharmacokinetic models disagree with one another by up
+to 1.8-fold for the same dose; this software cannot determine which of them,
+if any, is correct for a given patient.
 The authors disclaim any responsibility for consequences arising from
-the use of this software in clinical practice.
+the use of this software.

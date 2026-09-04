@@ -232,6 +232,21 @@ input, select, textarea {
     border: 1px solid var(--border);
 }
 
+.disclaimer-prohibition {
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    border-radius: var(--border-radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-bright);
+}
+
+.disclaimer-prohibition strong {
+    color: var(--danger);
+}
+
 .disclaimer-content ul {
     margin: 8px 0 12px;
     padding-left: 20px;
@@ -293,6 +308,36 @@ input, select, textarea {
     flex-shrink: 0;
     z-index: 10;
     border-bottom: 1px solid var(--border-light);
+}
+
+/* Non-dismissible reminder that this build is not for patient care. Kept
+   outside the disclaimer modal so it stays visible for the whole session. */
+.research-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px max(12px, var(--sal)) 6px max(12px, var(--sar));
+    background: var(--danger-light);
+    border-bottom: 1px solid var(--danger);
+    flex-shrink: 0;
+    z-index: 9;
+}
+
+.research-banner-tag {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #0D1117;
+    background: var(--danger);
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+.research-banner-text {
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-secondary);
 }
 
 .header-left h1 {
@@ -1482,6 +1527,24 @@ select.select-input:focus {
 @media print {
     .app-header, .step-nav, .action-bar, .step-nav-bottom, .btn, .modal {
         display: none !important;
+    }
+
+    /* The banner is deliberately kept on printouts so a printed or exported
+       page cannot be mistaken for a clinical document. */
+    .research-banner {
+        display: flex !important;
+        background: #fff;
+        border: 1px solid #000;
+        margin-bottom: 8px;
+    }
+
+    .research-banner-tag {
+        background: #000;
+        color: #fff;
+    }
+
+    .research-banner-text {
+        color: #000;
     }
 
     .wizard-viewport, .wizard-track, .wizard-step {

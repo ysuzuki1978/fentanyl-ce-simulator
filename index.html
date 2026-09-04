@@ -35,12 +35,17 @@
             </div>
             <div class="modal-body">
                 <div class="disclaimer-content">
+                    <p class="disclaimer-prohibition">
+                        本アプリケーションは<strong>研究・教育目的に限定</strong>されます。<br>
+                        <strong>臨床使用を禁止します。</strong>
+                    </p>
                     <ul>
-                        <li>本アプリケーションは<strong>教育・研究目的</strong>のシミュレータです</li>
-                        <li>臨床診断・治療の根拠として使用しないでください</li>
-                        <li>すべての臨床判断は資格を持つ医療者の責任のもとで行ってください</li>
+                        <li>実際の患者の投与量決定・診断・治療方針の根拠として使用してはなりません</li>
+                        <li>医療機器ではなく、いかなる規制当局の承認・認証も受けていません</li>
                         <li>表示される濃度は母集団モデルによる理論値であり、個々の患者の実測濃度ではありません</li>
                         <li>鎮痛効果の表示は文献の母集団統計に基づく参考指標であり、個々の患者の鎮痛充足度を保証するものではありません</li>
+                        <li>実装した 3 つの PK モデルは同一投与量に対して最大 1.8 倍異なる Ce を与えます。単一の値を正解として扱わないでください</li>
+                        <li>すべての臨床判断は資格を持つ医療者が、本アプリとは独立に行ってください</li>
                     </ul>
                     <p class="disclaimer-basis">
                         PK/PD: Scott JC, Stanski DR. J Pharmacol Exp Ther 1987;240:159-66 (既定)<br>
@@ -52,7 +57,7 @@
             </div>
             <div class="modal-footer">
                 <button id="acceptDisclaimer" class="btn btn-primary btn-block">
-                    同意して開始
+                    研究・教育目的での利用に同意して開始
                 </button>
             </div>
         </div>
@@ -72,6 +77,11 @@
                 </button>
             </div>
         </header>
+
+        <div class="research-banner" role="note">
+            <span class="research-banner-tag">研究・教育用</span>
+            <span class="research-banner-text">臨床使用は禁止です。表示値は母集団モデルの理論値であり、患者の実測濃度でも鎮痛充足の判定でもありません。</span>
+        </div>
 
         <nav class="step-nav">
             <button class="step-tab active" data-step="0">
