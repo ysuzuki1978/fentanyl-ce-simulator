@@ -36,6 +36,9 @@ Propofol TCI TIVA application.
 It runs by opening `index.html` in a browser. No build step; the only external dependency is
 Chart.js.
 
+**Live version: <https://ysuzuki1978.github.io/fentanyl-ce-simulator/>** — subject to the
+research-and-education-only restriction stated above.
+
 ---
 
 ## The PK models, and why they were chosen
