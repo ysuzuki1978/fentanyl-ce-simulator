@@ -1,4 +1,4 @@
-# Fentanyl Ce Simulator V1.0.0
+# Fentanyl Ce Simulator V1.1.0
 
 > ## ⚠ Research and educational use only — clinical use is prohibited
 >
@@ -22,14 +22,15 @@
 
 A research and educational simulator that predicts the fentanyl effect-site concentration
 (Ce) and shows where that concentration sits with respect to analgesia, with every value
-tied to a published source. The interface follows the three-step structure of the companion
-Propofol TCI TIVA application.
+tied to a published source. The interface has four tabs along the bottom of the screen, with
+the current Ce, the analgesia band and the elapsed time pinned above them:
 
-- **Step 1 Real time** — predicts Cp and Ce for boluses and infusions in real time, with the
+- **Dose** — the model, the dose and the infusion rate; Start, Stop and Extra bolus
+- **Chart** — predicts Cp and Ce for boluses and infusions in real time, with the
   analgesia indicators updating alongside
-- **Step 2 Analgesia** — the analgesia indicators at any chosen Ce, the Ce–effect curve, and
+- **Assess** — the analgesia indicators at any chosen Ce, the Ce–effect curve, and
   the dosing needed to hold that Ce
-- **Step 3 Dose record** — reconstructs the full time course from the dose events on an
+- **Record** — reconstructs the full time course from the dose events on an
   anaesthesia record, gives the decrement times after dosing stops, and estimates the
   patient's own MEAC from recorded analgesia assessments
 
@@ -38,6 +39,23 @@ Chart.js.
 
 **Live version: <https://ysuzuki1978.github.io/fentanyl-ce-simulator/>** — subject to the
 research-and-education-only restriction stated above.
+
+---
+
+## Version history
+
+### V1.1.0 (2026-10-23)
+
+- **Phone layout.** The three-step wizard is four bottom tabs (Dose / Chart / Assess / Record). The Ce, the analgesia band, the elapsed time and the Start / Stop / Extra bolus / Record buttons stay pinned above every tab.
+- **Charts.** Pinch to zoom, drag to pan, double-tap or `Fit` to reset, and `+` / `−` buttons. The y axis follows the visible window. On touch screens there is no tooltip; the legend chips show the values at the cursor (or the latest point).
+- **Anaesthesia start.** A `Now` button beside the start time in the patient settings (the dose and observation times already had one).
+- **Forms.** Every field is at least 16px so that Safari does not zoom the page; touch targets are at least 44px.
+- **Known limit.** While a chart is zoomed, the MEAC / MEC reference lines (two points each) can fall outside the window and are not drawn.
+- No change to the pharmacokinetic models, constants or integration.
+
+### V1.0.0
+
+- First release.
 
 ---
 

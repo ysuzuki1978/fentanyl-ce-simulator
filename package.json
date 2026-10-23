@@ -1,6 +1,6 @@
 {
   "name": "fentanyl-ce-simulator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fentanyl effect-site concentration and analgesia simulator. Research and educational use only; clinical use is prohibited.",
   "private": true,
   "scripts": {
