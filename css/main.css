@@ -396,106 +396,141 @@ input, select, textarea {
 }
 
 /* ============================================
-   Step Navigation
-   ============================================ */
-.step-nav {
-    height: var(--step-nav-h);
-    background: #0D1117;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 0 max(8px, var(--sal));
+   Tabs, the pinned readout, and the panes
+   ============================================
+
+   The app is a column that fills the screen: header, the pinned readout, one
+   scrolling pane, and the tab bar at the bottom where a thumb reaches it. Only
+   the pane scrolls. The tab bar moves to the top of the column on a wide
+   screen, where there is no thumb to serve. */
+.tabbar {
+    order: 9;
     flex-shrink: 0;
+    display: flex;
+    background: #010409;
+    border-top: 1px solid var(--border);
+    padding: 0 var(--sar) var(--sab) var(--sal);
     z-index: 10;
 }
 
-.step-tab {
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    transition: all 0.2s ease;
-}
-
-.step-tab.active {
-    background: var(--primary-light);
-    color: var(--primary);
-}
-
-.step-tab.completed {
-    color: var(--success);
-}
-
-.step-num {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--bg-surface);
-    color: var(--text-muted);
-    font-size: 12px;
-    font-weight: 700;
+.tab {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 54px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none;
+    border: none;
+    border-top: 2px solid transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.tab.active {
+    color: var(--text-bright);
+    border-top-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.tab:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
+/* A run is going: the chart tab says so. */
+.tab.live::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+}
+
+/* The answer, pinned above every tab. */
+.live-strip {
     flex-shrink: 0;
+    padding: 8px max(12px, var(--sar)) 8px max(12px, var(--sal));
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
 }
 
-.step-tab.active .step-num {
-    background: var(--primary);
-    color: #010409;
+.strip-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
-.step-tab.completed .step-num {
-    background: var(--success);
-    color: #010409;
+.strip-top .analgesia-headline {
+    margin-bottom: 0;
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 0;
 }
 
-.step-label {
-    font-size: 13px;
-    white-space: nowrap;
+.strip-top .analgesia-band-name { font-size: 14px; }
+
+.strip-top .elapsed-card {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 2px 10px;
+    gap: 8px;
 }
 
-.step-arrow {
-    color: var(--text-muted);
-    font-size: 10px;
-}
+.strip-top .elapsed-value { font-size: 17px; }
 
-/* ============================================
-   Wizard
-   ============================================ */
+.live-strip .conc-grid { margin-bottom: 0; }
+.live-strip .conc-grid:not(.conc-multi) { grid-template-columns: 1fr; }
+
+/* One model: a single row, Ce large and Cp beside it. Several: one column each. */
+.live-strip .model-conc-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 14px;
+    padding: 6px 10px;
+}
+.live-strip .model-conc-head { margin: 0; flex: 1 1 auto; }
+.live-strip .model-conc-row { flex: 0 0 auto; gap: 6px; }
+.live-strip .model-conc-row + .model-conc-row { margin-top: 0; }
+.live-strip .model-conc-value { font-size: 22px; }
+
+.live-strip .conc-multi { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+.live-strip .conc-multi .model-conc-card { display: block; padding: 6px 8px; }
+.live-strip .conc-multi .model-conc-head { margin-bottom: 2px; }
+.live-strip .conc-multi .model-conc-value { font-size: 18px; }
+
+.strip-actions { margin: 8px 0 0; }
+.strip-actions .btn-action { min-height: 46px; }
+
+/* Run controls are for the first two tabs; the others are about something else. */
+.main-app[data-step="2"] .strip-actions,
+.main-app[data-step="3"] .strip-actions { display: none; }
+
 .wizard-viewport {
     flex: 1;
-    overflow: hidden;
+    min-height: 0;
     position: relative;
 }
 
-.wizard-track {
-    display: flex;
-    width: 300%;
-    height: 100%;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-}
+.wizard-track { height: 100%; }
 
+/* One pane at a time. Measured when it opens (see goToStep), because a canvas
+   drawn while hidden has no size. */
 .wizard-step {
-    width: calc(100% / 3);
-    flex-shrink: 0;
+    display: none;
     height: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
 }
+.wizard-step.active { display: block; }
 
 .step-content {
     padding: 12px max(12px, var(--sal)) calc(12px + var(--sab)) max(12px, var(--sar));
@@ -1338,7 +1373,9 @@ details.disclosure > div {
 }
 
 .time-input-row .time-input {
-    flex: 1;
+    /* iOS keeps a time input at its intrinsic width unless the width is taken off it. */
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
 }
 
@@ -1443,26 +1480,6 @@ select.select-input:focus {
 }
 
 /* ============================================
-   Bottom navigation
-   ============================================ */
-.step-nav-bottom {
-    padding: 12px 0 8px;
-}
-
-.step-nav-dual {
-    display: flex;
-    gap: 8px;
-}
-
-.step-nav-dual .btn-back {
-    flex: 0 0 auto;
-}
-
-.step-nav-dual .btn-next {
-    flex: 1;
-}
-
-/* ============================================
    Responsive
    ============================================ */
 @media (min-width: 768px) {
@@ -1495,12 +1512,6 @@ select.select-input:focus {
     }
 }
 
-@media (max-width: 380px) {
-    .step-label {
-        display: none;
-    }
-}
-
 @media (prefers-contrast: high) {
     :root {
         --border: #888;
@@ -1519,13 +1530,10 @@ select.select-input:focus {
         transition-duration: 0.01ms !important;
     }
 
-    .wizard-track {
-        transition: none;
-    }
 }
 
 @media print {
-    .app-header, .step-nav, .action-bar, .step-nav-bottom, .btn, .modal {
+    .app-header, .tabbar, .strip-actions, .btn, .modal, .chart-tools {
         display: none !important;
     }
 
@@ -1554,11 +1562,8 @@ select.select-input:focus {
         position: static;
     }
 
-    .wizard-track {
-        display: block;
-        width: 100%;
-        transform: none !important;
-    }
+    /* Every pane prints, not only the open one. */
+    .wizard-step { display: block !important; }
 
     body {
         background: white;
@@ -1614,4 +1619,233 @@ select.select-input:focus {
 .observation-row .dose-details {
     font-family: var(--mono);
     font-size: 12px;
+}
+
+/* ============================================
+   Charts: tall, readable, zoomable
+   ============================================ */
+
+/* Tall enough to read a curve on an upright phone, and never so tall that the
+   pinned readout above and the tab bar below leave nothing of it. The vh line
+   is the fallback for a browser without dvh. */
+.chart-container.chart-tall {
+    height: 340px;
+    height: clamp(300px, calc(100vh - 500px), 620px);
+    height: clamp(300px, calc(100dvh - 500px), 620px);
+    margin-bottom: 8px;
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.chart-cursor {
+    position: absolute;
+    top: 0;
+    width: 0;
+    border-left: 1px dashed #8B949E;
+    pointer-events: none;
+}
+.chart-cursor::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    background: #0D1117;
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+
+.chart-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* Legend in HTML above the canvas. One chip per series, switching it on and off,
+   with the reading at the cursor (or at the latest point) beside the name. */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.chart-legend:empty { display: none; }
+
+.legend-head {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-right: 2px;
+}
+
+.legend-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 4px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.3;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+/* The chip is 34px so that two rows of them fit above the chart; the touch
+   target is 44px, reaching 5px past each edge. */
+.legend-chip::before { content: ''; position: absolute; inset: -5px 0; }
+.legend-chip.off { opacity: 0.42; }
+.legend-chip.off .legend-name { text-decoration: line-through; }
+.legend-chip.ref { color: var(--text-secondary); }
+
+.legend-swatch {
+    flex-shrink: 0;
+    width: 16px;
+    height: 10px;
+    background: linear-gradient(to bottom, transparent 40%, var(--swatch) 40%,
+                                var(--swatch) 60%, transparent 60%);
+}
+.legend-swatch.dashed {
+    background: repeating-linear-gradient(to right, var(--swatch) 0 4px, transparent 4px 7px);
+    height: 2px;
+}
+
+.legend-name { font-weight: 600; color: var(--text-bright); }
+.legend-chip.ref .legend-name { font-weight: 500; color: var(--text-secondary); }
+.legend-value { font-family: var(--mono); font-weight: 700; color: var(--text-bright); }
+.legend-value:empty { display: none; }
+
+.chart-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.chart-hint { font-size: 11px; line-height: 1.4; color: var(--text-muted); }
+.chart-tools .trace-toggle { flex: 0 1 190px; margin: 0; padding: 2px; }
+.chart-tools .trace-toggle button { min-height: 44px; padding: 0 8px; white-space: nowrap; }
+.chart-zoom { display: flex; gap: 6px; flex-shrink: 0; }
+.zoom-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-bright);
+    font: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+.zoom-btn:disabled { opacity: 0.35; cursor: default; }
+.zoom-fit { font-size: 13px; font-weight: 600; }
+
+/* ============================================
+   Phones
+   ============================================ */
+@media (max-width: 899.98px) {
+    /* The tab says what the pane is for; the heading and its subtitle only
+       pushed the first control down. */
+    .step-title-bar { display: none; }
+
+    .app-header { min-height: 40px; }
+    .btn-icon { height: 44px; }
+    .btn-close { min-width: 44px; min-height: 44px; }
+    .btn-sm { min-height: 44px; }
+    .model-toggle button {
+        min-height: 44px;
+        font-size: 13px;
+        line-height: 1.15;
+        white-space: normal;
+        text-overflow: clip;
+    }
+    /* Two steppers side by side must be allowed to shrink below the width of
+       their buttons and field, or the second one runs off the screen. */
+    .stepper-row-group > * { min-width: 0; }
+    .stepper-btn { width: 44px; }
+    .research-banner { padding-top: 4px; padding-bottom: 4px; }
+    .research-banner-text { font-size: 10px; line-height: 1.35; }
+    .btn { min-height: 44px; }
+    .delete-dose { min-width: 44px; min-height: 44px; }
+    .stepper-compact .stepper-btn { width: 44px; height: 44px; }
+    .research-banner { display: block; font-size: 10px; line-height: 1.35; }
+    .research-banner-tag { display: inline-block; margin-right: 6px; vertical-align: 1px; }
+    .research-banner-text { display: inline; }
+    .chart-hint-line { margin: -4px 0 12px; }
+}
+
+/* Many series (Compare): one row that scrolls sideways, so the chart is not
+   pushed off the screen by four rows of chips. */
+@media (max-width: 899.98px) {
+    .chart-legend.dense { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+    .chart-legend.dense::-webkit-scrollbar { display: none; }
+    .chart-legend.dense > * { flex-shrink: 0; }
+}
+
+/* A phone on its side has no height for pinned strips: the page scrolls as a
+   whole and nothing is fixed. */
+@media (max-height: 500px) and (max-width: 899.98px) {
+    html, body { height: auto; overflow: visible; }
+    .main-app { height: auto; min-height: 100%; }
+    .wizard-viewport { flex: none; }
+    .wizard-track, .wizard-step { height: auto; overflow: visible; }
+    .tabbar { order: 2; border-top: none; border-bottom: 1px solid var(--border); }
+    .tab { min-height: 44px; }
+    .chart-container.chart-tall { height: 260px; }
+
+    /* The readout and the run controls side by side: half the height. */
+    .live-strip {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 12px;
+        align-items: center;
+    }
+    .live-strip .strip-top { grid-column: 1 / -1; }
+    .live-strip .strip-actions { margin: 0; }
+}
+
+/* ============================================
+   Wide screens: the tab bar goes to the top, the readout stays above the panes
+   ============================================ */
+@media (min-width: 900px) {
+    .tabbar {
+        order: 2;
+        justify-content: center;
+        border-top: none;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .tab {
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 0 28px;
+        border-top: none;
+        border-bottom: 2px solid transparent;
+    }
+    .tab.active { border-bottom-color: var(--primary); }
+
+    .live-strip {
+        order: 3;
+        padding-left: max(12px, calc(50% - 410px));
+        padding-right: max(12px, calc(50% - 410px));
+    }
+    .wizard-viewport { order: 4; }
+    .chart-container.chart-tall { height: clamp(320px, calc(100vh - 560px), 640px); }
 }

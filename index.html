@@ -7,12 +7,12 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Fentanyl Ce Simulator V1.0.0</title>
+    <title>Fentanyl Ce Simulator V1.1.0</title>
 
     <meta name="theme-color" content="#010409">
     <meta name="apple-mobile-web-app-title" content="Fentanyl Ce">
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="js/vendor/chart.min.js"></script>
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23010409%22/%3E%3Cpath d=%22M4 24 C10 24 10 9 16 9 C22 9 22 20 28 20%22 fill=%22none%22 stroke=%22%232FBFA8%22 stroke-width=%223%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
     <link rel="stylesheet" href="css/main.css">
@@ -68,7 +68,7 @@
 
         <header class="app-header">
             <div class="header-left">
-                <h1>Fentanyl Ce <span class="version">V1.0</span></h1>
+                <h1>Fentanyl Ce <span class="version">V1.1</span></h1>
             </div>
             <div class="header-right">
                 <button id="editPatientBtn" class="btn-icon" aria-label="Patient settings">
@@ -83,34 +83,40 @@
             <span class="research-banner-text">Clinical use is prohibited. Values shown are theoretical population-model predictions, not measured patient concentrations and not a judgement of analgesic adequacy.</span>
         </div>
 
-        <nav class="step-nav">
-            <button class="step-tab active" data-step="0">
-                <span class="step-num">1</span>
-                <span class="step-label">Real time</span>
-            </button>
-            <span class="step-arrow">&#9654;</span>
-            <button class="step-tab" data-step="1">
-                <span class="step-num">2</span>
-                <span class="step-label">Analgesia</span>
-            </button>
-            <span class="step-arrow">&#9654;</span>
-            <button class="step-tab" data-step="2">
-                <span class="step-num">3</span>
-                <span class="step-label">Dose record</span>
-            </button>
-        </nav>
+        <!-- The answer, pinned: what Ce is right now and what it means, with the
+             run controls. Outside the tabs so it is on screen whichever one is open. -->
+        <section class="live-strip" id="liveStrip" aria-label="Live prediction">
+            <div class="strip-top">
+                <div class="analgesia-headline">
+                    <span class="analgesia-dot" id="rtBandDot"></span>
+                    <span class="analgesia-band-name" id="rtBandName">Before dosing</span>
+                    <span class="analgesia-band-range" id="rtBandRange"></span>
+                </div>
+                <div class="elapsed-card">
+                    <span class="elapsed-label">Elapsed</span>
+                    <span id="rtElapsed" class="elapsed-value">00:00</span>
+                </div>
+            </div>
+            <div class="conc-grid" id="rtConcGrid"></div>
+            <div class="action-bar strip-actions">
+                <button id="startRealtimeBtn" class="btn btn-primary btn-action">Start</button>
+                <button id="stopRealtimeBtn" class="btn btn-danger btn-action hidden">Stop</button>
+                <button id="addBolusBtn" class="btn btn-warning btn-action hidden">Extra bolus</button>
+                <button id="recordSnapshotBtn" class="btn btn-secondary btn-action hidden">Record</button>
+            </div>
+        </section>
 
         <div class="wizard-viewport">
             <div class="wizard-track" id="wizardTrack">
 
                 <!-- ============================================ -->
-                <!-- STEP 1: Real-time Ce prediction               -->
+                <!-- STEP 1: Dose and model for the real-time run    -->
                 <!-- ============================================ -->
                 <section class="wizard-step" data-step="0">
                     <div class="step-content">
                         <div class="step-title-bar">
-                            <h2>Real-time effect-site concentration</h2>
-                            <p class="step-subtitle">Once dosing starts, Cp / Ce and the analgesia indicators update in real time</p>
+                            <h2>Dose and model</h2>
+                            <p class="step-subtitle">Choose the PK model and the dose, then press Start. Cp / Ce and the analgesia indicators update in real time</p>
                         </div>
 
                         <!-- Model selection -->
@@ -151,43 +157,59 @@
                                     </div>
                                 </div>
                             </div>
-                            <p class="model-note">
-                                A bolus is given at Start and each time "Extra bolus" is pressed. The infusion rate can be changed at any time and takes effect from that moment.
-                            </p>
-
                             <div class="card-title" style="margin-top:12px">Playback speed</div>
                             <div class="model-toggle" id="speedToggle">
                                 <button type="button" data-speed="1" class="active">&times;1 real time</button>
                                 <button type="button" data-speed="10">&times;10</button>
                                 <button type="button" data-speed="60">&times;60</button>
                             </div>
-                            <p class="model-note">
-                                Fentanyl takes about 3 min to reach peak Ce, and decays over hours after dosing stops. &times;10 / &times;60 fast-forward the simulated clock.
-                            </p>
+                            <details class="model-details">
+                                <summary>How dosing and playback work</summary>
+                                <div class="model-note">
+                                    A bolus is given at Start and each time "Extra bolus" is pressed. The infusion rate can be changed at any time and takes effect from that moment.<br><br>
+                                    Fentanyl takes about 3 min to reach peak Ce, and decays over hours after dosing stops. &times;10 / &times;60 fast-forward the simulated clock.
+                                </div>
+                            </details>
                         </div>
 
-                        <div class="action-bar">
-                            <button id="startRealtimeBtn" class="btn btn-primary btn-action">Start</button>
-                            <button id="stopRealtimeBtn" class="btn btn-danger btn-action hidden">Stop</button>
-                            <button id="addBolusBtn" class="btn btn-warning btn-action hidden">Extra bolus</button>
-                            <button id="recordSnapshotBtn" class="btn btn-secondary btn-action hidden">Record</button>
+                        <div id="snapshotsSection" class="snapshots-section hidden">
+                            <h3>Records</h3>
+                            <div id="snapshotsList"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================ -->
+                <!-- STEP 2: Chart and analgesia readout           -->
+                <!-- ============================================ -->
+                <section class="wizard-step" data-step="1">
+                    <div class="step-content">
+                        <div class="step-title-bar">
+                            <h2>Concentration chart</h2>
+                            <p class="step-subtitle">Ce and Cp over the run, with the analgesia indicators at the current Ce</p>
                         </div>
 
-                        <!-- Concentrations -->
-                        <div class="conc-grid" id="rtConcGrid"></div>
-
-                        <div class="elapsed-card">
-                            <span class="elapsed-label">Elapsed</span>
-                            <span id="rtElapsed" class="elapsed-value">00:00</span>
+                        <div class="chart-legend" id="rtLegend"></div>
+                        <div class="chart-container chart-tall" id="rtChartHost">
+                            <canvas id="realtimeChart" aria-label="Effect-site and plasma concentration over time"></canvas>
+                            <div class="chart-cursor" id="rtCursor" hidden aria-hidden="true"></div>
+                            <div class="chart-empty" id="rtEmpty">Press Start to draw the run</div>
                         </div>
-
-                        <!-- Analgesia panel -->
-                        <div class="analgesia-card">
-                            <div class="analgesia-headline">
-                                <span class="analgesia-dot" id="rtBandDot"></span>
-                                <span class="analgesia-band-name" id="rtBandName">Before dosing</span>
-                                <span class="analgesia-band-range" id="rtBandRange"></span>
+                        <div class="chart-tools">
+                            <div class="model-toggle trace-toggle" id="traceToggle">
+                                <button type="button" data-trace="both" class="active">Ce + Cp</button>
+                                <button type="button" data-trace="ce">Ce only</button>
                             </div>
+                            <span class="chart-zoom">
+                                <button type="button" class="zoom-btn" id="rtZoomOut" aria-label="Zoom out">&minus;</button>
+                                <button type="button" class="zoom-btn" id="rtZoomIn" aria-label="Zoom in">+</button>
+                                <button type="button" class="zoom-btn zoom-fit" id="rtFit" aria-label="Show the whole run" disabled>Fit</button>
+                            </span>
+                        </div>
+                        <p class="chart-hint chart-hint-line">Pinch to zoom &middot; drag to pan &middot; double-tap to reset. Tap the chart to read the values at that time.</p>
+
+                        <!-- Analgesia panel (the headline sits in the strip above) -->
+                        <div class="analgesia-card">
                             <p class="analgesia-desc" id="rtBandDesc">Press Start to begin predicting the fentanyl effect-site concentration and the analgesia indicators.</p>
 
                             <div class="analgesia-metrics" id="rtMetrics"></div>
@@ -197,33 +219,14 @@
                                 <div class="ce-scale-labels" id="rtCeScaleLabels"></div>
                             </div>
                         </div>
-
-                        <div class="model-toggle trace-toggle" id="traceToggle">
-                            <button type="button" data-trace="both" class="active">Ce + Cp</button>
-                            <button type="button" data-trace="ce">Ce only</button>
-                        </div>
-
-                        <div class="chart-container">
-                            <canvas id="realtimeChart"></canvas>
-                        </div>
-
-                        <div id="snapshotsSection" class="snapshots-section hidden">
-                            <h3>Records</h3>
-                            <div id="snapshotsList"></div>
-                        </div>
-
-                        <div class="step-nav-bottom">
-                            <button class="btn btn-primary btn-block btn-next" data-goto="1">
-                                Analgesia &#9654;
-                            </button>
-                        </div>
                     </div>
                 </section>
 
+
                 <!-- ============================================ -->
-                <!-- STEP 2: Analgesia assessment                  -->
+                <!-- STEP 3: Analgesia assessment                  -->
                 <!-- ============================================ -->
-                <section class="wizard-step" data-step="1">
+                <section class="wizard-step" data-step="2">
                     <div class="step-content">
                         <div class="step-title-bar">
                             <h2>Analgesia assessment and target Ce</h2>
@@ -296,17 +299,13 @@
                             </div>
                         </details>
 
-                        <div class="step-nav-bottom step-nav-dual">
-                            <button class="btn btn-secondary btn-back" data-goto="0">&#9664; Real time</button>
-                            <button class="btn btn-primary btn-next" data-goto="2">Dose record &#9654;</button>
-                        </div>
                     </div>
                 </section>
 
                 <!-- ============================================ -->
-                <!-- STEP 3: Dose record simulation                -->
+                <!-- STEP 4: Dose record simulation                -->
                 <!-- ============================================ -->
-                <section class="wizard-step" data-step="2">
+                <section class="wizard-step" data-step="3">
                     <div class="step-content">
                         <div class="step-title-bar">
                             <h2>Dose record simulation</h2>
@@ -365,8 +364,18 @@
                                 </div>
                             </div>
 
-                            <div class="chart-container">
-                                <canvas id="recordChart"></canvas>
+                            <div class="chart-legend" id="recLegend"></div>
+                            <div class="chart-container chart-tall" id="recChartHost">
+                                <canvas id="recordChart" aria-label="Concentration over the dose record"></canvas>
+                                <div class="chart-cursor" id="recCursor" hidden aria-hidden="true"></div>
+                            </div>
+                            <div class="chart-tools">
+                                <span class="chart-hint">Pinch to zoom &middot; drag to pan &middot; double-tap to reset</span>
+                                <span class="chart-zoom">
+                                    <button type="button" class="zoom-btn" id="recZoomOut" aria-label="Zoom out">&minus;</button>
+                                    <button type="button" class="zoom-btn" id="recZoomIn" aria-label="Zoom in">+</button>
+                                    <button type="button" class="zoom-btn zoom-fit" id="recFit" aria-label="Show the whole record" disabled>Fit</button>
+                                </span>
                             </div>
 
                             <div class="control-card">
@@ -426,16 +435,18 @@
                             </div>
                         </div>
 
-                        <div class="step-nav-bottom">
-                            <button class="btn btn-secondary btn-block btn-back" data-goto="1">
-                                &#9664; Back to analgesia
-                            </button>
-                        </div>
                     </div>
                 </section>
 
             </div>
         </div>
+
+        <nav class="tabbar" role="tablist" aria-label="Sections">
+            <button role="tab" class="tab active" data-step="0" aria-selected="true">Dose</button>
+            <button role="tab" class="tab" data-step="1" aria-selected="false">Chart</button>
+            <button role="tab" class="tab" data-step="2" aria-selected="false">Assess</button>
+            <button role="tab" class="tab" data-step="3" aria-selected="false">Record</button>
+        </nav>
     </div>
 
     <!-- Patient Modal -->
@@ -506,7 +517,10 @@
 
                 <div class="form-group">
                     <label for="editAnesthesiaStart">Anaesthesia start time</label>
-                    <input type="time" id="editAnesthesiaStart" class="time-input" value="09:00">
+                    <div class="time-input-row">
+                        <input type="time" id="editAnesthesiaStart" class="time-input" value="09:00">
+                        <button type="button" id="startTimeNowBtn" class="btn btn-secondary time-now-btn">Now</button>
+                    </div>
                 </div>
 
                 <p class="fine-print">
@@ -609,6 +623,7 @@
     <script src="js/individualisation.js"></script>
     <script src="js/simulation-engine.js"></script>
     <script src="js/realtime-engine.js"></script>
+    <script src="js/chart-view.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

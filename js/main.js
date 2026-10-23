@@ -1,13 +1,16 @@
 /**
  * Application controller for the Fentanyl Ce Simulator.
  *
- * Three steps, mirroring the layout of the companion Propofol TCI app:
- *   1. real-time Ce prediction with the analgesia readout
+ * Four tabs, one per task:
+ *   0. dose and model for the real-time run
+ *   1. the real-time chart with the analgesia readout
  *   2. analgesia assessment and target-Ce design
  *   3. dose-record simulation over the whole anaesthetic
+ * The live Ce, the analgesia band and the run controls sit above the tabs and
+ * are on screen whichever one is open.
  */
 
-const APP_VERSION = 'V1.0.0';
+const APP_VERSION = 'V1.1.0';
 
 class MainController {
     constructor() {
@@ -20,7 +23,7 @@ class MainController {
 
         this.modelMode = FENTANYL_DEFAULT_MODEL;  // a model id, or 'all'
         this.currentStep = 0;
-        this.totalSteps = 3;
+        this.totalSteps = 4;
 
         this.realtimeChart = null;
         this.curveChart = null;
@@ -29,9 +32,8 @@ class MainController {
         this.showCp = true;
         this.chartRedrawAt = 0;
         this.holdState = null;
-        this.touchStartX = 0;
-        this.touchDeltaX = 0;
-        this.isSwiping = false;
+        this.realtimeView = null;
+        this.recordView = null;
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.initialize());
@@ -127,37 +129,9 @@ class MainController {
     // Wizard
     // =============================================
     setupWizard() {
-        document.querySelectorAll('.step-tab').forEach(tab => {
+        document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => this.goToStep(parseInt(tab.dataset.step, 10)));
         });
-        document.querySelectorAll('[data-goto]').forEach(btn => {
-            btn.addEventListener('click', () => this.goToStep(parseInt(btn.dataset.goto, 10)));
-        });
-
-        const viewport = document.querySelector('.wizard-viewport');
-        viewport.addEventListener('touchstart', (e) => {
-            const tag = e.target.tagName;
-            if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'CANVAS' || tag === 'SELECT') return;
-            this.touchStartX = e.touches[0].clientX;
-            this.isSwiping = false;
-        }, { passive: true });
-
-        viewport.addEventListener('touchmove', (e) => {
-            if (this.touchStartX === 0) return;
-            this.touchDeltaX = e.touches[0].clientX - this.touchStartX;
-            if (Math.abs(this.touchDeltaX) > 20) this.isSwiping = true;
-        }, { passive: true });
-
-        viewport.addEventListener('touchend', () => {
-            if (this.isSwiping && Math.abs(this.touchDeltaX) > 60) {
-                if (this.touchDeltaX < 0) this.goToStep(this.currentStep + 1);
-                else this.goToStep(this.currentStep - 1);
-            }
-            this.touchStartX = 0;
-            this.touchDeltaX = 0;
-            this.isSwiping = false;
-        });
-
         this.goToStep(0);
     }
 
@@ -165,15 +139,22 @@ class MainController {
         if (step < 0 || step >= this.totalSteps) return;
         this.currentStep = step;
 
-        document.getElementById('wizardTrack').style.transform =
-            `translateX(${-(step * 100 / this.totalSteps)}%)`;
-
-        document.querySelectorAll('.step-tab').forEach((tab, i) => {
-            tab.classList.toggle('active', i === step);
+        document.getElementById('mainApp').dataset.step = String(step);
+        document.querySelectorAll('.wizard-step').forEach((pane, i) => {
+            pane.classList.toggle('active', i === step);
         });
+        document.querySelectorAll('.tab').forEach((tab, i) => {
+            tab.classList.toggle('active', i === step);
+            tab.setAttribute('aria-selected', String(i === step));
+        });
+        const pane = document.querySelector(`.wizard-step[data-step="${step}"]`);
+        if (pane) pane.scrollTop = 0;
 
-        if (step === 1) this.onEnterAnalgesiaStep();
-        if (step === 2) this.onEnterRecordStep();
+        if (step === 2) this.onEnterAnalgesiaStep();
+        if (step === 3) this.onEnterRecordStep();
+        // A canvas drawn while its tab was hidden has no size to lay out
+        // against, so every chart is measured again when its tab opens.
+        this.resizeCharts();
     }
 
     // =============================================
@@ -226,6 +207,7 @@ class MainController {
         document.getElementById('closeDoseModal').addEventListener('click', () => this.hideDoseModal());
         document.getElementById('cancelDoseAdd').addEventListener('click', () => this.hideDoseModal());
         document.getElementById('doseTimeNowBtn').addEventListener('click', () => this.setDoseTimeToNow());
+        document.getElementById('startTimeNowBtn').addEventListener('click', () => this.setStartTimeToNow());
         document.getElementById('doseForm').addEventListener('submit', (e) => this.addDoseEvent(e));
 
         document.getElementById('addObservationBtn').addEventListener('click', () => this.showObservationModal());
@@ -413,6 +395,13 @@ class MainController {
         document.getElementById('doseModal').classList.remove('active');
     }
 
+    /** The anaesthesia start field in the patient editor, set to the wall clock. */
+    setStartTimeToNow() {
+        const now = new Date();
+        document.getElementById('editAnesthesiaStart').value =
+            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
     setDoseTimeToNow() {
         const now = new Date();
         document.getElementById('doseTime').value =
@@ -497,9 +486,8 @@ class MainController {
         const continuous = this.readNumber('rtContinuous', 0);
 
         if (this.realtimeChart) {
-            this.realtimeChart.data.labels = [];
-            this.realtimeChart.data.datasets.forEach(ds => { ds.data = []; });
-            this.realtimeChart.update('none');
+            this.realtimeChart.data.datasets = [];
+            this.realtimeView.clear();
         }
 
         if (this.engine.start(this.patient, bolus, continuous)) {
@@ -533,6 +521,7 @@ class MainController {
         document.getElementById('stopRealtimeBtn').classList.toggle('hidden', !isRunning);
         document.getElementById('addBolusBtn').classList.toggle('hidden', !isRunning);
         document.getElementById('recordSnapshotBtn').classList.toggle('hidden', !isRunning);
+        document.querySelectorAll('.tab[data-step="1"]').forEach(tab => tab.classList.toggle('live', isRunning));
     }
 
     onRealtimeUpdate(state) {
@@ -556,9 +545,7 @@ class MainController {
     renderConcentrationCards(state) {
         const container = document.getElementById('rtConcGrid');
         const ids = this.activeModelIds();
-        container.style.gridTemplateColumns = ids.length > 1
-            ? 'repeat(auto-fit, minmax(120px, 1fr))'
-            : '1fr';
+        container.classList.toggle('conc-multi', ids.length > 1);
         container.innerHTML = '';
 
         for (const id of ids) {
@@ -854,7 +841,7 @@ class MainController {
         this.simulationResult = results;
 
         this.renderRecordResults();
-        this.renderRecordChart();
+        this.renderRecordChart(true);
         this.renderDecrementList();
         this.renderIndividualisation();
     }
@@ -1191,13 +1178,18 @@ class MainController {
             maintainAspectRatio: false,
             animation: { duration: 0 },
             interaction: { mode: 'index', intersect: false, axis: 'x' },
+            // A finger gets no tooltip: it stayed on after the touch ended and
+            // covered the traces it described. Charts with a ChartView read
+            // their values from its legend chips instead.
+            events: ChartView.COARSE ? [] : ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'],
             plugins: {
                 legend: { labels: { boxWidth: 12, font: { size: 11 }, color: '#8B949E' } },
                 tooltip: {
                     padding: 10, cornerRadius: 8,
                     backgroundColor: '#161B22', titleColor: '#E6EDF3', bodyColor: '#C9D1D9',
                     borderColor: '#30363D', borderWidth: 1,
-                    titleFont: { size: 12 }, bodyFont: { size: 11 }
+                    titleFont: { size: 12 }, bodyFont: { size: 11 },
+                    filter: (item) => !item.dataset.isRef
                 }
             },
             scales: {
@@ -1215,18 +1207,45 @@ class MainController {
         };
     }
 
-    /** Horizontal MEC / MEAC reference lines drawn as flat datasets. */
-    thresholdDatasets(length) {
+    /**
+     * Options for a concentration-against-time chart read through a ChartView:
+     * a linear x axis in minutes, no built-in legend (the view draws chips with
+     * the readings), and no y title, whose unit the legend carries instead.
+     */
+    timeChartOptions(formatX, xTitle) {
+        const options = this.baseChartOptions('');
+        options.plugins.legend = { display: false };
+        options.plugins.tooltip.callbacks = {
+            title: (items) => formatX(items[0].parsed.x),
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}`
+        };
+        options.scales.x = {
+            type: 'linear',
+            title: { display: true, text: xTitle, color: '#8B949E', font: { size: 10 } },
+            ticks: {
+                maxTicksLimit: 8, maxRotation: 0, includeBounds: false,
+                font: { size: 10 }, color: '#8B949E',
+                callback: (value) => formatX(value)
+            },
+            grid: { color: 'rgba(255,255,255,0.06)' }
+        };
+        options.scales.y.title = { display: false };
+        return options;
+    }
+
+    /** Horizontal MEC / MEAC reference lines, across the x range [0, xMax]. */
+    thresholdDatasets(xMax) {
+        const across = (y) => [{ x: 0, y }, { x: xMax, y }];
         return [
             {
-                label: `MEAC ${Analgesia.MEAC.median} ng/mL`,
-                data: new Array(length).fill(Analgesia.MEAC.median),
+                label: `MEAC ${Analgesia.MEAC.median}`, series: 'meac', isRef: true,
+                data: across(Analgesia.MEAC.median),
                 borderColor: 'rgba(216,90,48,0.85)',
                 borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false
             },
             {
-                label: `MEC ${Analgesia.MEC.median} ng/mL`,
-                data: new Array(length).fill(Analgesia.MEC.median),
+                label: `MEC ${Analgesia.MEC.median}`, series: 'mec', isRef: true,
+                data: across(Analgesia.MEC.median),
                 borderColor: 'rgba(212,160,23,0.85)',
                 borderDash: [3, 3], borderWidth: 1.5, pointRadius: 0, fill: false
             }
@@ -1235,16 +1254,24 @@ class MainController {
 
     initializeRealtimeChart() {
         const ctx = document.getElementById('realtimeChart').getContext('2d');
-        const options = this.baseChartOptions('Concentration (ng/mL)');
-        options.scales.x = {
-            title: { display: true, text: 'Elapsed time (min)', color: '#8B949E', font: { size: 10 } },
-            ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
-            grid: { color: 'rgba(255,255,255,0.06)' }
-        };
+        const formatMin = (x) => String(Number(x.toFixed(Math.abs(x) < 10 ? 1 : 0)));
         this.realtimeChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [] },
-            options
+            data: { datasets: [] },
+            options: this.timeChartOptions(formatMin, 'Elapsed time (min)')
+        });
+        this.realtimeView = new ChartView({
+            host: document.getElementById('rtChartHost'),
+            getChart: () => this.realtimeChart,
+            // The whole run so far. At least a minute, so an empty chart has an axis.
+            getExtent: () => ({ min: 0, max: Math.max(this.realtimeSpanMin || 0, 1) }),
+            unit: 'ng/mL',
+            formatX: (x) => `${formatMin(x)} min`,
+            legend: document.getElementById('rtLegend'),
+            cursorEl: document.getElementById('rtCursor'),
+            zoomIn: document.getElementById('rtZoomIn'),
+            zoomOut: document.getElementById('rtZoomOut'),
+            fit: document.getElementById('rtFit')
         });
     }
 
@@ -1254,27 +1281,27 @@ class MainController {
      * plotting both on one axis flattens the Ce trace; hiding Cp rescales the
      * axis to the concentrations the analgesia bands are defined on.
      */
-    buildConcentrationDatasets(points, ceOf, cpOf) {
+    buildConcentrationDatasets(points, xOf, ceOf, cpOf, xMax) {
         const datasets = [];
         for (const id of this.activeModelIds()) {
             const model = FentanylModels[id];
             datasets.push({
-                label: `Ce (${model.shortLabel})`,
-                data: points.map(p => ceOf(p, id)),
+                label: `Ce ${model.shortLabel}`, series: `ce:${id}`,
+                data: points.map(p => ({ x: xOf(p), y: ceOf(p, id) })),
                 borderColor: model.color, borderWidth: 2,
                 pointRadius: 0, fill: false, tension: 0.1
             });
             if (this.showCp) {
                 datasets.push({
-                    label: `Cp (${model.shortLabel})`,
-                    data: points.map(p => cpOf(p, id)),
+                    label: `Cp ${model.shortLabel}`, series: `cp:${id}`,
+                    data: points.map(p => ({ x: xOf(p), y: cpOf(p, id) })),
                     borderColor: model.cpColor,
                     borderWidth: 1.2, borderDash: [4, 3],
                     pointRadius: 0, fill: false, tension: 0.1
                 });
             }
         }
-        datasets.push(...this.thresholdDatasets(points.length));
+        datasets.push(...this.thresholdDatasets(xMax));
         return datasets;
     }
 
@@ -1302,21 +1329,24 @@ class MainController {
         this.chartRedrawAt = now;
 
         const history = state.history;
+        const empty = document.getElementById('rtEmpty');
         if (!history.length) {
-            this.realtimeChart.data.labels = [];
+            this.realtimeSpanMin = 0;
             this.realtimeChart.data.datasets = [];
-            this.realtimeChart.update('none');
+            this.realtimeView.sync();
+            empty.classList.remove('hidden');
             return;
         }
+        empty.classList.add('hidden');
 
         const maxPoints = 400;
         const stride = Math.max(1, Math.ceil(history.length / maxPoints));
         const points = history.filter((_, i) => i % stride === 0 || i === history.length - 1);
 
-        this.realtimeChart.data.labels = points.map(p => p.t.toFixed(1));
+        this.realtimeSpanMin = points[points.length - 1].t;
         this.realtimeChart.data.datasets = this.buildConcentrationDatasets(
-            points, (p, id) => p.ce[id], (p, id) => p.cp[id]);
-        this.realtimeChart.update('none');
+            points, (p) => p.t, (p, id) => p.ce[id], (p, id) => p.cp[id], this.realtimeSpanMin);
+        this.realtimeView.sync();
     }
 
     initializeCurveChart() {
@@ -1391,49 +1421,55 @@ class MainController {
         this.curveChart.update('none');
     }
 
-    renderRecordChart() {
+    renderRecordChart(freshRun = false) {
         const canvas = document.getElementById('recordChart');
         if (!canvas || !this.simulationResult) return;
-        if (this.recordChart) this.recordChart.destroy();
 
         const ids = this.activeModelIds();
         const reference = this.simulationResult[ids[0]];
-        const labels = reference.times.map(t =>
-            this.patient.minutesToClockTime(t).toLocaleTimeString('en-GB',
-                { hour: '2-digit', minute: '2-digit', hour12: false }));
+        const clock = (t) => this.patient.minutesToClockTime(t).toLocaleTimeString('en-GB',
+            { hour: '2-digit', minute: '2-digit', hour12: false });
+        const times = reference.times;
+        const xMax = times[times.length - 1];
 
-        const indices = reference.times.map((_, i) => i);
+        const indices = times.map((_, i) => i);
         const datasets = this.buildConcentrationDatasets(
-            indices,
+            indices, (i) => times[i],
             (i, id) => this.simulationResult[id].ce[i],
-            (i, id) => this.simulationResult[id].cp[i]);
+            (i, id) => this.simulationResult[id].cp[i], xMax);
 
-        this.recordChart = new Chart(canvas.getContext('2d'), {
-            type: 'line',
-            data: { labels, datasets },
-            options: {
-                ...this.baseChartOptions('Concentration (ng/mL)'),
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Clock time', color: '#8B949E', font: { size: 10 } },
-                        ticks: { maxTicksLimit: 8, font: { size: 10 }, color: '#8B949E' },
-                        grid: { color: 'rgba(255,255,255,0.06)' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Concentration (ng/mL)', font: { size: 10 }, color: '#8B949E' },
-                        ticks: { color: '#8B949E' },
-                        grid: { color: 'rgba(255,255,255,0.06)' }
-                    }
-                }
-            }
-        });
+        if (!this.recordChart) {
+            this.recordChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { datasets },
+                options: this.timeChartOptions(clock, 'Clock time')
+            });
+            this.recordView = new ChartView({
+                host: document.getElementById('recChartHost'),
+                getChart: () => this.recordChart,
+                getExtent: () => ({ min: 0, max: this.recordSpanMin || 1 }),
+                unit: 'ng/mL',
+                formatX: (x) => clock(x),
+                legend: document.getElementById('recLegend'),
+                cursorEl: document.getElementById('recCursor'),
+                zoomIn: document.getElementById('recZoomIn'),
+                zoomOut: document.getElementById('recZoomOut'),
+                fit: document.getElementById('recFit')
+            });
+        }
+        this.recordSpanMin = xMax;
+        this.recordChart.data.datasets = datasets;
+        // A new simulation is a new record and starts from the whole of it;
+        // switching model or trace keeps the window the reader zoomed to.
+        if (freshRun) this.recordView.clear(); else this.recordView.sync();
     }
 
     resizeCharts() {
-        [this.realtimeChart, this.curveChart, this.recordChart].forEach(chart => {
+        [this.realtimeChart, this.curveChart, this.recordChart, this.individualCurveChart].forEach(chart => {
             if (chart) chart.resize();
         });
+        // The cursor line is placed from the chart's scale, which moves with the canvas.
+        [this.realtimeView, this.recordView].forEach(view => { if (view) view.placeCursor(); });
     }
 
     // =============================================
