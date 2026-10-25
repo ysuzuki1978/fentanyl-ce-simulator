@@ -216,7 +216,7 @@ class MainController {
         document.getElementById('observationTimeNowBtn').addEventListener('click', () => {
             const now = new Date();
             document.getElementById('observationTime').value =
-                `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                formatClockTime(now);
         });
         document.getElementById('observationForm').addEventListener('submit', (e) => this.addObservation(e));
 
@@ -399,13 +399,13 @@ class MainController {
     setStartTimeToNow() {
         const now = new Date();
         document.getElementById('editAnesthesiaStart').value =
-            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            formatClockTime(now);
     }
 
     setDoseTimeToNow() {
         const now = new Date();
         document.getElementById('doseTime').value =
-            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            formatClockTime(now);
     }
 
     // =============================================
@@ -745,13 +745,7 @@ class MainController {
         const bolus = this.readNumber('doseBolusAmount', 0);
         const rate = this.readNumber('doseContinuousRate', 0);
 
-        const doseTime = new Date(this.patient.anesthesiaStartTime);
-        const [hours, minutes] = timeValue.split(':').map(Number);
-        doseTime.setHours(hours, minutes, 0, 0);
-
-        let minutesFromStart = this.patient.clockTimeToMinutes(doseTime);
-        if (minutesFromStart < 0) minutesFromStart += 1440;
-        minutesFromStart = Math.max(0, Math.round(minutesFromStart));
+        const minutesFromStart = minutesIntoCase(this.patient.anesthesiaStartTime, timeValue);
 
         const event = new DoseEvent(minutesFromStart, bolus, rate);
         const validation = event.validate();
@@ -869,13 +863,7 @@ class MainController {
         const timeValue = document.getElementById('observationTime').value;
         const adequate = new FormData(e.target).get('adequate') === 'yes';
 
-        const clock = new Date(this.patient.anesthesiaStartTime);
-        const [hours, minutes] = timeValue.split(':').map(Number);
-        clock.setHours(hours, minutes, 0, 0);
-
-        let minutesFromStart = this.patient.clockTimeToMinutes(clock);
-        if (minutesFromStart < 0) minutesFromStart += 1440;
-        minutesFromStart = Math.max(0, Math.round(minutesFromStart));
+        const minutesFromStart = minutesIntoCase(this.patient.anesthesiaStartTime, timeValue);
 
         const observation = new AnalgesiaObservation(minutesFromStart, adequate);
         const validation = observation.validate();
@@ -1141,8 +1129,7 @@ class MainController {
             sampleIntervalMin: 1
         });
 
-        const stopClock = this.patient.minutesToClockTime(stopMinutes)
-            .toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const stopClock = clockTimeAfter(this.patient.anesthesiaStartTime, stopMinutes);
         document.getElementById('decrementReference').textContent =
             `Time for Ce (${FentanylModels[id].shortLabel}) to fall below each threshold if all dosing stops at the last dose event, ` +
             `${stopClock} (${stopMinutes} min). ` +
@@ -1427,8 +1414,7 @@ class MainController {
 
         const ids = this.activeModelIds();
         const reference = this.simulationResult[ids[0]];
-        const clock = (t) => this.patient.minutesToClockTime(t).toLocaleTimeString('en-GB',
-            { hour: '2-digit', minute: '2-digit', hour12: false });
+        const clock = (t) => clockTimeAfter(this.patient.anesthesiaStartTime, t);
         const times = reference.times;
         const xMax = times[times.length - 1];
 
@@ -1552,7 +1538,7 @@ class MainController {
             const rate = infusionRateAt(infusionChanges, t);
 
             const row = [
-                p.minutesToClockTime(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
+                clockTimeAfter(p.anesthesiaStartTime, t),
                 t.toFixed(1),
                 bolus.toFixed(0),
                 rate.toFixed(1)

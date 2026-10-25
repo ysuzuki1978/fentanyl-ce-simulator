@@ -67,20 +67,8 @@ class Patient {
         return this.weight / Math.pow(this.height / 100, 2);
     }
 
-    minutesToClockTime(minutesFromStart) {
-        return new Date(this.anesthesiaStartTime.getTime() + minutesFromStart * 60000);
-    }
-
-    clockTimeToMinutes(clockTime) {
-        return (clockTime.getTime() - this.anesthesiaStartTime.getTime()) / 60000;
-    }
-
     get formattedStartTime() {
-        return this.anesthesiaStartTime.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return formatClockTime(this.anesthesiaStartTime);
     }
 
     validate() {
@@ -140,11 +128,7 @@ class DoseEvent {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return clockTimeAfter(patient.anesthesiaStartTime, this.timeInMinutes);
     }
 
     validate() {

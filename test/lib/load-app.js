@@ -7,9 +7,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const JS = path.join(__dirname, '..', '..', 'js');
-const FILES = ['models.js', 'fentanyl-pk.js', 'simulation-engine.js'];
+const FILES = ['clock.js', 'models.js', 'fentanyl-pk.js', 'simulation-engine.js'];
 const EXPORTS = ['FentanylModels', 'FENTANYL_MODEL_IDS', 'FENTANYL_KE0', 'Patient', 'DoseEvent',
-    'simulateDoseRecord', 'decrementTimes', 'maintenanceRateUgHr', 'loadingBolusUg',
+    'simulateDoseRecord', 'formatClockTime', 'parseClock', 'clockTimeAfter', 'minutesIntoCase', 'decrementTimes', 'maintenanceRateUgHr', 'loadingBolusUg',
     'timeToSteadyStateFraction', 'timeToPeakEffect', 'rk4Step'];
 
 function loadApp(mutations = {}, { extra = [] } = {}) {

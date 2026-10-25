@@ -85,9 +85,7 @@ class AnalgesiaObservation {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
-            hour: '2-digit', minute: '2-digit', hour12: false
-        });
+        return clockTimeAfter(patient.anesthesiaStartTime, this.timeInMinutes);
     }
 
     validate() {
