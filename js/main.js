@@ -10,7 +10,7 @@
  * are on screen whichever one is open.
  */
 
-const APP_VERSION = 'V1.1.0';
+const APP_VERSION = 'V1.1.1';
 
 class MainController {
     constructor() {
