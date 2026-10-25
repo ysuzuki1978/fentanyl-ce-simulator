@@ -265,16 +265,6 @@ const IndividualMEAC = {
             population.push(Analgesia.probability(value, Analgesia.MEAC));
         }
         return { ce, individual, population };
-    },
-
-    /** Posterior density expressed on the concentration axis, for plotting. */
-    densityOnConcentrationAxis(posterior) {
-        const { x, density, priorDensity } = posterior;
-        // p(m) dm = p(ln m) d(ln m), so dividing by m converts the density.
-        return x.map((value, i) => {
-            const m = Math.exp(value);
-            return { ce: m, posterior: density[i] / m, prior: priorDensity[i] / m };
-        });
     }
 };
 

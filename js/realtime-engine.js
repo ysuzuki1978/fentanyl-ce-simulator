@@ -196,16 +196,6 @@ class RealtimeEngine {
         return snapshot;
     }
 
-    /** Decrement times from the current state, per model. */
-    getDecrementTimes(thresholds) {
-        const out = {};
-        for (const id of FENTANYL_MODEL_IDS) {
-            out[id] = decrementTimes(this.states[id] || { a1: 0, a2: 0, a3: 0, ce: 0 },
-                this.pkParams[id], thresholds);
-        }
-        return out;
-    }
-
     getState() {
         const concentrations = {};
         for (const id of FENTANYL_MODEL_IDS) {

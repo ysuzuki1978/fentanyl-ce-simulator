@@ -386,11 +386,6 @@ class ChartView {
         line.style.height = `${chart.chartArea.bottom - chart.chartArea.top}px`;
         line.setAttribute('data-label', this.formatX(this.cursor));
     }
-
-    /** The tick label formatter for the x axis, which also tidies the window's own edges. */
-    tickFormatter() {
-        return (value) => this.formatX(value);
-    }
 }
 
 /** Whether the primary input is a finger. Fixed at load; a hybrid laptop is treated as a mouse. */

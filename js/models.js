@@ -161,23 +161,12 @@ class DoseEvent {
     }
 }
 
-/** Three-compartment state plus the effect compartment. Amounts in ug, Ce in ng/mL. */
-class SystemState {
-    constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0, ce = 0.0) {
-        this.a1 = a1;
-        this.a2 = a2;
-        this.a3 = a3;
-        this.ce = ce;
-    }
-}
-
 /** One snapshot recorded by the user during the real-time run. */
 class RealtimeSnapshot {
     constructor(label, elapsedMinutes, results) {
         this.label = label;
         this.elapsedMinutes = elapsedMinutes;
         this.results = results;   // { modelId: {cp, ce}, ... }
-        this.recordedAt = new Date();
     }
 
     get formattedTime() {
@@ -240,7 +229,6 @@ if (typeof window !== 'undefined') {
     window.ValidationLimits = ValidationLimits;
     window.Patient = Patient;
     window.DoseEvent = DoseEvent;
-    window.SystemState = SystemState;
     window.RealtimeSnapshot = RealtimeSnapshot;
     window.FentanylSession = FentanylSession;
 }
@@ -248,6 +236,6 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         SexType, AsapsType, ValidationLimits,
-        Patient, DoseEvent, SystemState, RealtimeSnapshot, FentanylSession
+        Patient, DoseEvent, RealtimeSnapshot, FentanylSession
     };
 }
