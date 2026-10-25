@@ -90,8 +90,8 @@ class AnalgesiaObservation {
 
     validate() {
         const errors = [];
-        if (!isFinite(this.timeInMinutes) || this.timeInMinutes < 0 || this.timeInMinutes > 1440) {
-            errors.push('Assessment time must be between 0 and 1440 min from the start of anaesthesia');
+        if (!isFinite(this.timeInMinutes) || this.timeInMinutes < 0 || this.timeInMinutes > ValidationLimits.Dosing.maximumTime) {
+            errors.push(`Assessment time must be between 0 and ${ValidationLimits.Dosing.maximumTime} min from the start of anaesthesia`);
         }
         return { isValid: errors.length === 0, errors };
     }
