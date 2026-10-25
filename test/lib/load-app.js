@@ -7,12 +7,12 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const JS = path.join(__dirname, '..', '..', 'js');
-const FILES = ['clock.js', 'models.js', 'fentanyl-pk.js', 'simulation-engine.js'];
+const FILES = ['clock.js', 'models.js', 'fentanyl-pk.js', 'simulation-engine.js', 'realtime-engine.js'];
 const EXPORTS = ['FentanylModels', 'FENTANYL_MODEL_IDS', 'FENTANYL_KE0', 'Patient', 'DoseEvent',
-    'simulateDoseRecord', 'formatClockTime', 'parseClock', 'clockTimeAfter', 'minutesIntoCase', 'decrementTimes', 'maintenanceRateUgHr', 'loadingBolusUg',
-    'timeToSteadyStateFraction', 'timeToPeakEffect', 'rk4Step'];
+    'simulateDoseRecord', 'formatClockTime', 'parseClock', 'clockTimeAfter', 'minutesIntoCase', 'elapsedWholeSeconds', 'RealtimeSnapshot', 'decrementTimes', 'maintenanceRateUgHr', 'loadingBolusUg',
+    'timeToSteadyStateFraction', 'timeToPeakEffect', 'rk4Step', 'emptyState', 'RealtimeEngine'];
 
-function loadApp(mutations = {}, { extra = [] } = {}) {
+function loadApp(mutations = {}, { extra = [], sandbox = {} } = {}) {
     const sources = FILES.map(file => {
         let text = readFileSync(path.join(JS, file), 'utf8');
         for (const [from, to] of mutations[file] || []) {
@@ -23,7 +23,7 @@ function loadApp(mutations = {}, { extra = [] } = {}) {
     });
     const names = [...EXPORTS, ...extra];
     const code = `${sources.join('\n')}\n;({ ${names.join(', ')} })`;
-    return vm.runInNewContext(code, { console: { log() {}, warn() {}, error() {} } });
+    return vm.runInNewContext(code, { console: { log() {}, warn() {}, error() {} }, ...sandbox });
 }
 
 module.exports = { loadApp };

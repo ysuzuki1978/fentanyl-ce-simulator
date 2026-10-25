@@ -50,7 +50,18 @@ function minutesIntoCase(startDate, timeText) {
     return minutes;
 }
 
+/**
+ * Whole seconds in an elapsed time given in minutes.
+ * The real-time engine adds its 0.02 min steps one at a time, so a run that is
+ * one minute long can read 0.9999999999999 min; without the tolerance that
+ * shows as 00:59 for the whole of the second that follows.
+ */
+function elapsedWholeSeconds(minutes) {
+    return Math.floor(minutes * 60 + 1e-6);
+}
+
 if (typeof window !== 'undefined') {
+    window.elapsedWholeSeconds = elapsedWholeSeconds;
     window.formatClockTime = formatClockTime;
     window.parseClock = parseClock;
     window.clockTimeAfter = clockTimeAfter;
@@ -58,5 +69,5 @@ if (typeof window !== 'undefined') {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { MINUTES_PER_DAY, formatClockTime, parseClock, clockTimeAfter, minutesIntoCase };
+    module.exports = { MINUTES_PER_DAY, elapsedWholeSeconds, formatClockTime, parseClock, clockTimeAfter, minutesIntoCase };
 }

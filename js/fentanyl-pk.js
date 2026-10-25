@@ -212,6 +212,11 @@ function rk4Step(state, infusionUgMin, pk, dt) {
     };
 }
 
+/** A patient with no drug on board: amounts in ug, Ce in ng/mL. */
+function emptyState() {
+    return { a1: 0, a2: 0, a3: 0, ce: 0 };
+}
+
 /** Plasma concentration (ng/mL) for a state under the given parameter set. */
 function plasmaConcentration(state, pk) {
     return Math.max(0, state.a1 / pk.v1);
@@ -246,6 +251,7 @@ if (typeof window !== 'undefined') {
     window.FENTANYL_KE0 = FENTANYL_KE0;
     window.fentanylDerivatives = fentanylDerivatives;
     window.rk4Step = rk4Step;
+    window.emptyState = emptyState;
     window.plasmaConcentration = plasmaConcentration;
     window.timeToPeakEffect = timeToPeakEffect;
 }
@@ -254,6 +260,6 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         FentanylModels, FENTANYL_MODEL_IDS, FENTANYL_DEFAULT_MODEL, FENTANYL_KE0,
         BAE_VOLUME_EXPONENT, BAE_CLEARANCE_EXPONENT,
-        fentanylDerivatives, rk4Step, plasmaConcentration, timeToPeakEffect
+        fentanylDerivatives, rk4Step, emptyState, plasmaConcentration, timeToPeakEffect
     };
 }

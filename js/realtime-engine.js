@@ -74,7 +74,7 @@ class RealtimeEngine {
         this.lastHistoryAt = -Infinity;
 
         for (const id of FENTANYL_MODEL_IDS) {
-            this.states[id] = { a1: 0, a2: 0, a3: 0, ce: 0 };
+            this.states[id] = emptyState();
         }
         this.recordHistory(true);
         if (bolusUg > 0) this.applyBolus(bolusUg);
@@ -106,7 +106,7 @@ class RealtimeEngine {
         this.historyIntervalMin = RT_HISTORY_INTERVAL_MIN;
         this.lastHistoryAt = -Infinity;
         for (const id of FENTANYL_MODEL_IDS) {
-            this.states[id] = { a1: 0, a2: 0, a3: 0, ce: 0 };
+            this.states[id] = emptyState();
         }
         this.notify();
     }
@@ -114,7 +114,7 @@ class RealtimeEngine {
     applyBolus(bolusUg) {
         if (!(bolusUg > 0)) return false;
         for (const id of FENTANYL_MODEL_IDS) {
-            if (!this.states[id]) this.states[id] = { a1: 0, a2: 0, a3: 0, ce: 0 };
+            if (!this.states[id]) this.states[id] = emptyState();
             this.states[id].a1 += bolusUg;
         }
         this.totalDoseUg += bolusUg;
@@ -167,7 +167,7 @@ class RealtimeEngine {
 
         const point = { t: this.elapsedMinutes, cp: {}, ce: {} };
         for (const id of FENTANYL_MODEL_IDS) {
-            const state = this.states[id] || { a1: 0, ce: 0 };
+            const state = this.states[id] || emptyState();
             point.cp[id] = plasmaConcentration(state, this.pkParams[id]);
             point.ce[id] = state.ce;
         }
@@ -184,7 +184,7 @@ class RealtimeEngine {
     takeSnapshot(label) {
         const results = {};
         for (const id of FENTANYL_MODEL_IDS) {
-            const state = this.states[id] || { a1: 0, ce: 0 };
+            const state = this.states[id] || emptyState();
             results[id] = {
                 cp: plasmaConcentration(state, this.pkParams[id]),
                 ce: state.ce
@@ -199,7 +199,7 @@ class RealtimeEngine {
     getState() {
         const concentrations = {};
         for (const id of FENTANYL_MODEL_IDS) {
-            const state = this.states[id] || { a1: 0, a2: 0, a3: 0, ce: 0 };
+            const state = this.states[id] || emptyState();
             concentrations[id] = {
                 cp: plasmaConcentration(state, this.pkParams[id]),
                 ce: state.ce
@@ -219,7 +219,7 @@ class RealtimeEngine {
     }
 
     formatElapsed() {
-        const totalSeconds = Math.floor(this.elapsedMinutes * 60);
+        const totalSeconds = elapsedWholeSeconds(this.elapsedMinutes);
         const hh = Math.floor(totalSeconds / 3600);
         const mm = Math.floor((totalSeconds % 3600) / 60);
         const ss = totalSeconds % 60;

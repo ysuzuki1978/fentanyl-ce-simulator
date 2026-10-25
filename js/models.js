@@ -170,7 +170,7 @@ class RealtimeSnapshot {
     }
 
     get formattedTime() {
-        const totalSeconds = Math.floor(this.elapsedMinutes * 60);
+        const totalSeconds = elapsedWholeSeconds(this.elapsedMinutes);
         const mm = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
         const ss = (totalSeconds % 60).toString().padStart(2, '0');
         return `${mm}:${ss}`;

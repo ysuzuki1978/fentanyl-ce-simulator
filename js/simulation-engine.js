@@ -65,7 +65,7 @@ function simulateDoseRecord(doseEvents, pk, options = {}) {
     const totalSteps = Math.round(duration / dt);
     const sampleEvery = Math.max(1, Math.round(sampleInterval / dt));
 
-    let state = { a1: 0, a2: 0, a3: 0, ce: 0 };
+    let state = emptyState();
     let bolusIndex = 0;
 
     const times = [];
@@ -173,7 +173,7 @@ function timeToSteadyStateFraction(pk, fraction = 0.9, horizonMin = 6000, dt = 0
     const steadyState = unitRateUgMin / pk.cl;   // Cp = Ce at steady state
     const target = fraction * steadyState;
 
-    let state = { a1: 0, a2: 0, a3: 0, ce: 0 };
+    let state = emptyState();
     const steps = Math.round(horizonMin / dt);
     for (let i = 1; i <= steps; i++) {
         state = rk4Step(state, unitRateUgMin, pk, dt);
