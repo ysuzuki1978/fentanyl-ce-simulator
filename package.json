@@ -4,7 +4,7 @@
   "description": "Fentanyl effect-site concentration and analgesia simulator. Research and educational use only; clinical use is prohibited.",
   "private": true,
   "scripts": {
-    "test": "node validation/validate-pk.js && node validation/validate-analgesia.js && node validation/validate-individualisation.js",
+    "test": "node validation/validate-pk.js && node validation/validate-analgesia.js && node validation/validate-individualisation.js && node --test test/*.test.js",
     "serve": "python3 -m http.server 8777"
   },
   "license": "MIT"
