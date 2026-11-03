@@ -85,15 +85,13 @@ class AnalgesiaObservation {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
-            hour: '2-digit', minute: '2-digit', hour12: false
-        });
+        return clockTimeAfter(patient.anesthesiaStartTime, this.timeInMinutes);
     }
 
     validate() {
         const errors = [];
-        if (!isFinite(this.timeInMinutes) || this.timeInMinutes < 0 || this.timeInMinutes > 1440) {
-            errors.push('Assessment time must be between 0 and 1440 min from the start of anaesthesia');
+        if (!isFinite(this.timeInMinutes) || this.timeInMinutes < 0 || this.timeInMinutes > ValidationLimits.Dosing.maximumTime) {
+            errors.push(`Assessment time must be between 0 and ${ValidationLimits.Dosing.maximumTime} min from the start of anaesthesia`);
         }
         return { isValid: errors.length === 0, errors };
     }
@@ -267,16 +265,6 @@ const IndividualMEAC = {
             population.push(Analgesia.probability(value, Analgesia.MEAC));
         }
         return { ce, individual, population };
-    },
-
-    /** Posterior density expressed on the concentration axis, for plotting. */
-    densityOnConcentrationAxis(posterior) {
-        const { x, density, priorDensity } = posterior;
-        // p(m) dm = p(ln m) d(ln m), so dividing by m converts the density.
-        return x.map((value, i) => {
-            const m = Math.exp(value);
-            return { ce: m, posterior: density[i] / m, prior: priorDensity[i] / m };
-        });
     }
 };
 

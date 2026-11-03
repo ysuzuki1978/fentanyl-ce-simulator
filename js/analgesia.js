@@ -82,22 +82,33 @@ function fitHyperbolicEmax(c1, e1, c2, e2) {
     return { c50, emax };
 }
 
+/**
+ * The reference concentrations (ng/mL) that the curves, the bands and the
+ * decrement-time thresholds all use. Each is written once, here.
+ */
+const GOURLAY_MEC = 0.63;       // Gourlay 1988: mean MEC
+const BAE_MEC_MEDIAN = 0.72;    // Bae 2020: MEC median
+const BAE_MEAC_MEDIAN = 0.99;   // Bae 2020: MEAC median
+const MAC_REDUCTION_50_CE = 1.67;   // McEwan 1993: 50% isoflurane MAC reduction
+const SKIN_INCISION_CP50 = 3.26;    // Glass 1993
+const SKIN_INCISION_BAR_CP50 = 4.17; // Glass 1993
+
 const Analgesia = {
     MEC: {
-        ...fitLogLogistic(0.72, 0.58, 1.05),
+        ...fitLogLogistic(BAE_MEC_MEDIAN, 0.58, 1.05),
         label: 'MEC',
         source: 'Bae 2020 (PMID 32861508) median 0.72 / IQR 0.58-1.05'
     },
 
     MEAC: {
-        ...fitLogLogistic(0.99, 0.76, 1.28),
+        ...fitLogLogistic(BAE_MEAC_MEDIAN, 0.76, 1.28),
         label: 'MEAC',
         source: 'Bae 2020 (PMID 32861508) median 0.99 / IQR 0.76-1.28'
     },
 
     /** Isoflurane MAC reduction, fitted to McEwan 1993 (50% at 1.67, 63% at 3). */
     MAC: {
-        ...fitHyperbolicEmax(1.67, 50, 3.0, 63),
+        ...fitHyperbolicEmax(MAC_REDUCTION_50_CE, 50, 3.0, 63),
         source: 'Hyperbolic Emax fitted to the three published points of McEwan 1993 (PMID 8489058)'
     },
 
@@ -108,8 +119,8 @@ const Analgesia = {
         {
             id: 'sub',
             name: 'Sub-analgesic',
-            min: 0, max: 0.63,
-            rangeLabel: '< 0.63',
+            min: 0, max: GOURLAY_MEC,
+            rangeLabel: `< ${GOURLAY_MEC}`,
             color: '#6E7681',
             description: 'Below the mean minimum concentration reported as effective for postoperative analgesia.',
             source: 'Gourlay 1988 (PMID 3354866): MEC 0.63 ± 0.25 ng/mL'
@@ -117,8 +128,8 @@ const Analgesia = {
         {
             id: 'mec',
             name: 'MEC band',
-            min: 0.63, max: 0.99,
-            rangeLabel: '0.63 – 0.99',
+            min: GOURLAY_MEC, max: BAE_MEAC_MEDIAN,
+            rangeLabel: `${GOURLAY_MEC} – ${BAE_MEAC_MEDIAN}`,
             color: '#D4A017',
             description: 'Pain at rest begins to ease in some patients, but most have not yet reached the concentration judged adequate for analgesia.',
             source: 'Gourlay 1988 (PMID 3354866) MEC 0.63 / Bae 2020 (PMID 32861508) MEC median 0.72'
@@ -126,8 +137,8 @@ const Analgesia = {
         {
             id: 'meac',
             name: 'Postoperative analgesia',
-            min: 0.99, max: 1.67,
-            rangeLabel: '0.99 – 1.67',
+            min: BAE_MEAC_MEDIAN, max: MAC_REDUCTION_50_CE,
+            rangeLabel: `${BAE_MEAC_MEDIAN} – ${MAC_REDUCTION_50_CE}`,
             color: '#2FBFA8',
             description: 'Above the median concentration judged adequate in the PACU after open abdominal surgery. Postoperative pain is controlled in more than half of patients.',
             source: 'Bae 2020 (PMID 32861508): MEAC median 0.99 (IQR 0.76-1.28) ng/mL'
@@ -135,8 +146,8 @@ const Analgesia = {
         {
             id: 'mac',
             name: 'Intraoperative adjunct',
-            min: 1.67, max: 3.26,
-            rangeLabel: '1.67 – 3.26',
+            min: MAC_REDUCTION_50_CE, max: SKIN_INCISION_CP50,
+            rangeLabel: `${MAC_REDUCTION_50_CE} – ${SKIN_INCISION_CP50}`,
             color: '#5BA4CF',
             description: 'Reduces isoflurane MAC by 50% or more. The propofol Cp50 also falls by 30-55%.',
             source: 'McEwan 1993 (PMID 8489058): 50% MAC reduction at 1.67 ng/mL / Kazama 1997 (PMID 9286884)'
@@ -144,8 +155,8 @@ const Analgesia = {
         {
             id: 'incision',
             name: 'High-stimulus range',
-            min: 3.26, max: 4.17,
-            rangeLabel: '3.26 – 4.17',
+            min: SKIN_INCISION_CP50, max: SKIN_INCISION_BAR_CP50,
+            rangeLabel: `${SKIN_INCISION_CP50} – ${SKIN_INCISION_BAR_CP50}`,
             color: '#9B72B0',
             description: 'From the concentration that suppresses movement to skin incision in half of patients under 70% N2O, up to the concentration that also suppresses the haemodynamic and autonomic response.',
             source: 'Glass 1993 (PMID 8489055): skin incision Cp50 3.26 / Cp50-BAR 4.17 ng/mL'
@@ -153,8 +164,8 @@ const Analgesia = {
         {
             id: 'high',
             name: 'High concentration',
-            min: 4.17, max: Infinity,
-            rangeLabel: '≥ 4.17',
+            min: SKIN_INCISION_BAR_CP50, max: Infinity,
+            rangeLabel: `≥ ${SKIN_INCISION_BAR_CP50}`,
             color: '#D85A30',
             description: 'The fall in respiratory rate becomes marked in spontaneously breathing patients. Check the Ce decrement time before planning extubation.',
             source: 'Mildh 2001 (PMID 11574361): EC50 3.5 for a 50% fall in respiratory rate, 6.1 ng/mL for a 50% fall in minute ventilation'
@@ -163,9 +174,9 @@ const Analgesia = {
 
     /** Thresholds offered in the decrement-time panel. */
     DECREMENT_THRESHOLDS: [
-        { value: 1.67, label: '50% isoflurane MAC reduction (McEwan 1993)' },
-        { value: 0.99, label: 'MEAC median (Bae 2020)' },
-        { value: 0.72, label: 'MEC median (Bae 2020)' },
+        { value: MAC_REDUCTION_50_CE, label: '50% isoflurane MAC reduction (McEwan 1993)' },
+        { value: BAE_MEAC_MEDIAN, label: 'MEAC median (Bae 2020)' },
+        { value: BAE_MEC_MEDIAN, label: 'MEC median (Bae 2020)' },
         { value: 0.50, label: 'Analgesia-minus-respiratory-depression utility boundary (Boom 2013)' }
     ],
 

@@ -1,4 +1,4 @@
-# Fentanyl Ce Simulator V1.1.0
+# Fentanyl Ce Simulator V1.1.1
 
 > ## ⚠ Research and educational use only — clinical use is prohibited
 >
@@ -43,6 +43,16 @@ research-and-education-only restriction stated above.
 ---
 
 ## Version history
+
+### V1.1.1 (2026-10-25)
+
+Cleanup release. Cp and Ce are unchanged (bit-identical to V1.1.0 on 3 weights x 3 models x 2 dose records); see CHANGELOG.md.
+
+- Clock handling is in `js/clock.js` (pure functions, tested) instead of nine inline copies.
+- Each reference concentration (MEC / MEAC medians, MAC-reduction point, skin-incision values) is written once in `js/analgesia.js`.
+- Code with no caller was removed (38 lines).
+- The elapsed-time display no longer reads one second low after a run of 0.02 min steps (10 steps showed 11 s instead of 12 s).
+- `npm test` adds `test/` (Node `--test`, no dependencies): Cp and Ce of all three models against the matrix-exponential solution, the real-time engine against the same, parameter regression, clock, and negative controls.
 
 ### V1.1.0 (2026-10-23)
 
@@ -378,7 +388,7 @@ The following are not displayed, because no primary source could be verified for
 ## Validation
 
 ```
-npm test        # PK 44 + analgesia 26 + individualisation 29 = 99 checks
+npm test        # PK 44 + analgesia 26 + individualisation 29 = 99 checks, then test/ (60 tests)
 ```
 
 On the PK side:
@@ -400,6 +410,18 @@ On the analgesia side:
 - The bands are continuous with no gaps and every boundary matches a published anchor value
 - Every band carries a PMID; the curves are monotone and stay within range
 
+`test/` (Node's built-in runner, `node --test test/*.test.js`) adds:
+
+- Cp and Ce of the three models at 45, 70 and 120 kg against a matrix-exponential solution of
+  the same linear system, at every whole minute of three dose records (tolerance 1e-6 relative;
+  the rates are converted in the test, not by the application)
+- The real-time engine at x60 against the same solution after 10 simulated minutes, and the same
+  state at x10 and x60 for equal simulated time
+- Parameter regression for the three models, and the published tpeak / peak ratio
+- Clock conversions, including a case that runs past midnight
+- Five negative controls: a rate read as µg/min instead of µg/hr, a rate change one step late, a
+  wrong ke0 and a bolus in the wrong compartment each make the exact-solution comparison fail
+
 The individualisation checks are described in the section above (29 checks including the
 recovery test).
 
@@ -410,7 +432,7 @@ recovery test).
 Open `index.html` in a browser. There is no build step.
 
 ```
-npm test       # run all 99 validation checks
+npm test       # the 99 validation checks, then the 60 tests in test/
 npm run serve  # serve locally on http://localhost:8777
 ```
 
@@ -424,6 +446,7 @@ charts will not render offline.
 ```
 index.html                     UI
 css/main.css                   Styles (vocabulary shared with the Propofol TCI app, teal accent)
+js/clock.js                    Clock-time conversion (pure)
 js/models.js                   Patient / DoseEvent / validation / session format
 js/fentanyl-pk.js              The three PK models, RK4, tpeak calculation
 js/analgesia.js                Bands, population probability curves, MAC reduction, respiratory indicators
@@ -434,6 +457,7 @@ js/main.js                     Controller
 validation/validate-pk.js      PK evaluator
 validation/validate-analgesia.js       Analgesia module evaluator
 validation/validate-individualisation.js  Individualisation evaluator (includes the recovery test)
+test/                          Node tests: exact solution, real-time engine, parameters, clock, constants, negative controls
 ```
 
 Units are consistent throughout: drug amount in µg, volume in L, concentration in ng/mL

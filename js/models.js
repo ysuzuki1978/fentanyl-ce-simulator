@@ -67,20 +67,8 @@ class Patient {
         return this.weight / Math.pow(this.height / 100, 2);
     }
 
-    minutesToClockTime(minutesFromStart) {
-        return new Date(this.anesthesiaStartTime.getTime() + minutesFromStart * 60000);
-    }
-
-    clockTimeToMinutes(clockTime) {
-        return (clockTime.getTime() - this.anesthesiaStartTime.getTime()) / 60000;
-    }
-
     get formattedStartTime() {
-        return this.anesthesiaStartTime.toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return formatClockTime(this.anesthesiaStartTime);
     }
 
     validate() {
@@ -140,11 +128,7 @@ class DoseEvent {
     }
 
     formattedClockTime(patient) {
-        return patient.minutesToClockTime(this.timeInMinutes).toLocaleTimeString('en-GB', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
+        return clockTimeAfter(patient.anesthesiaStartTime, this.timeInMinutes);
     }
 
     validate() {
@@ -177,27 +161,16 @@ class DoseEvent {
     }
 }
 
-/** Three-compartment state plus the effect compartment. Amounts in ug, Ce in ng/mL. */
-class SystemState {
-    constructor(a1 = 0.0, a2 = 0.0, a3 = 0.0, ce = 0.0) {
-        this.a1 = a1;
-        this.a2 = a2;
-        this.a3 = a3;
-        this.ce = ce;
-    }
-}
-
 /** One snapshot recorded by the user during the real-time run. */
 class RealtimeSnapshot {
     constructor(label, elapsedMinutes, results) {
         this.label = label;
         this.elapsedMinutes = elapsedMinutes;
         this.results = results;   // { modelId: {cp, ce}, ... }
-        this.recordedAt = new Date();
     }
 
     get formattedTime() {
-        const totalSeconds = Math.floor(this.elapsedMinutes * 60);
+        const totalSeconds = elapsedWholeSeconds(this.elapsedMinutes);
         const mm = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
         const ss = (totalSeconds % 60).toString().padStart(2, '0');
         return `${mm}:${ss}`;
@@ -256,7 +229,6 @@ if (typeof window !== 'undefined') {
     window.ValidationLimits = ValidationLimits;
     window.Patient = Patient;
     window.DoseEvent = DoseEvent;
-    window.SystemState = SystemState;
     window.RealtimeSnapshot = RealtimeSnapshot;
     window.FentanylSession = FentanylSession;
 }
@@ -264,6 +236,6 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         SexType, AsapsType, ValidationLimits,
-        Patient, DoseEvent, SystemState, RealtimeSnapshot, FentanylSession
+        Patient, DoseEvent, RealtimeSnapshot, FentanylSession
     };
 }
